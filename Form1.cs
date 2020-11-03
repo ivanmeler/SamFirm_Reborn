@@ -177,11 +177,11 @@ namespace SamFirm
             {
               this.ControlsEnabled(false);
               Utility.ReconnectDownload = false;
-              this.download_button.Invoke((Delegate) (() =>
+              this.download_button.Invoke((Delegate)((Action)(() =>
               {
                 this.download_button.Enabled = true;
                 this.download_button.Text = "Pause";
-              }));
+              })));
               if (this.FW.Filename == this.destinationfile)
                 Logger.WriteLog("Trying to download " + this.FW.Filename, false);
               else
@@ -219,14 +219,14 @@ namespace SamFirm
                       Logger.WriteLog("Success: CRC match!", false);
                   }
                 }
-                this.decrypt_button.Invoke((Delegate) (() => this.decrypt_button.Enabled = true));
+                this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = true)));
                 if (this.checkbox_autodecrypt.Checked)
                   this.decrypt_button_Click(o, (EventArgs) null);
               }
 label_15:
               if (!Utility.ReconnectDownload)
                 this.ControlsEnabled(true);
-              this.download_button.Invoke((Delegate) (() => this.download_button.Text = "Download"));
+              this.download_button.Invoke((Delegate)((Action)(() => this.download_button.Text = "Download")));
             }
             catch (Exception ex)
             {
@@ -262,15 +262,15 @@ label_15:
             this.FW = !this.checkbox_auto.Checked ? Command.UpdateCheck(this.model_textbox.Text, this.region_textbox.Text, this.pda_textbox.Text, this.csc_textbox.Text, this.phone_textbox.Text, this.pda_textbox.Text, this.binary_checkbox.Checked, false) : Command.UpdateCheckAuto(this.model_textbox.Text, this.region_textbox.Text, this.binary_checkbox.Checked);
             if (!string.IsNullOrEmpty(this.FW.Filename))
             {
-              this.file_textbox.Invoke((Delegate) (() => this.file_textbox.Text = this.FW.Filename));
-              this.version_textbox.Invoke((Delegate) (() => this.version_textbox.Text = this.FW.Version));
-              this.size_textbox.Invoke((Delegate) (() => this.size_textbox.Text = (long.Parse(this.FW.Size) / 1024L / 1024L).ToString() + " MB"));
+              this.file_textbox.Invoke((Delegate)((Action)(() => this.file_textbox.Text = this.FW.Filename)));
+              this.version_textbox.Invoke((Delegate)((Action)(() => this.version_textbox.Text = this.FW.Version)));
+              this.size_textbox.Invoke((Delegate)((Action)(() => this.size_textbox.Text = (long.Parse(this.FW.Size) / 1024L / 1024L).ToString() + " MB")));
             }
             else
             {
-              this.file_textbox.Invoke((Delegate) (() => this.file_textbox.Text = string.Empty));
-              this.version_textbox.Invoke((Delegate) (() => this.version_textbox.Text = string.Empty));
-              this.size_textbox.Invoke((Delegate) (() => this.size_textbox.Text = string.Empty));
+              this.file_textbox.Invoke((Delegate)((Action)(() => this.file_textbox.Text = string.Empty)));
+              this.version_textbox.Invoke((Delegate)((Action)(() => this.version_textbox.Text = string.Empty)));
+              this.size_textbox.Invoke((Delegate)((Action)(() => this.size_textbox.Text = string.Empty)));
             }
             this.ControlsEnabled(true);
           }
@@ -288,7 +288,7 @@ label_15:
     {
       if (Progress > 100)
         Progress = 100;
-      this.progressBar.Invoke((Delegate) (() =>
+      this.progressBar.Invoke((Delegate)((Action)(() =>
       {
         this.progressBar.Value = Progress;
         try
@@ -298,28 +298,28 @@ label_15:
         catch (Exception ex)
         {
         }
-      }));
+      })));
     }
 
     private void ControlsEnabled(bool Enabled)
     {
-      this.update_button.Invoke((Delegate) (() => this.update_button.Enabled = Enabled));
-      this.download_button.Invoke((Delegate) (() => this.download_button.Enabled = Enabled));
-      this.binary_checkbox.Invoke((Delegate) (() => this.binary_checkbox.Enabled = Enabled));
-      this.model_textbox.Invoke((Delegate) (() => this.model_textbox.Enabled = Enabled));
-      this.region_textbox.Invoke((Delegate) (() => this.region_textbox.Enabled = Enabled));
-      this.checkbox_auto.Invoke((Delegate) (() => this.checkbox_auto.Enabled = Enabled));
-      this.checkbox_manual.Invoke((Delegate) (() => this.checkbox_manual.Enabled = Enabled));
-      this.checkbox_manual.Invoke((Delegate) (() =>
+      this.update_button.Invoke((Delegate)((Action)(() => this.update_button.Enabled = Enabled)));
+      this.download_button.Invoke((Delegate)((Action)(() => this.download_button.Enabled = Enabled)));
+      this.binary_checkbox.Invoke((Delegate)((Action)(() => this.binary_checkbox.Enabled = Enabled)));
+      this.model_textbox.Invoke((Delegate)((Action)(() => this.model_textbox.Enabled = Enabled)));
+      this.region_textbox.Invoke((Delegate)((Action)(() => this.region_textbox.Enabled = Enabled)));
+      this.checkbox_auto.Invoke((Delegate)((Action)(() => this.checkbox_auto.Enabled = Enabled)));
+      this.checkbox_manual.Invoke((Delegate)((Action)(() => this.checkbox_manual.Enabled = Enabled)));
+      this.checkbox_manual.Invoke((Delegate)((Action)(() =>
       {
         if (!this.checkbox_manual.Checked)
           return;
         this.pda_textbox.Enabled = Enabled;
         this.csc_textbox.Enabled = Enabled;
         this.phone_textbox.Enabled = Enabled;
-      }));
-      this.checkbox_autodecrypt.Invoke((Delegate) (() => this.checkbox_autodecrypt.Enabled = Enabled));
-      this.checkbox_crc.Invoke((Delegate) (() => this.checkbox_crc.Enabled = Enabled));
+      })));
+      this.checkbox_autodecrypt.Invoke((Delegate)((Action)(() => this.checkbox_autodecrypt.Enabled = Enabled)));
+      this.checkbox_crc.Invoke((Delegate)((Action)(() => this.checkbox_crc.Enabled = Enabled)));
     }
 
     private void decrypt_button_Click(object sender, EventArgs e)
@@ -336,7 +336,7 @@ label_15:
           Thread.Sleep(100);
           Logger.WriteLog("\nDecrypting firmware...", false);
           this.ControlsEnabled(false);
-          this.decrypt_button.Invoke((Delegate) (() => this.decrypt_button.Enabled = false));
+          this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = false)));
           if (this.destinationfile.EndsWith(".enc2"))
             Crypto.SetDecryptKey(this.FW.Region, this.FW.Model, this.FW.Version);
           else if (this.destinationfile.EndsWith(".enc4"))

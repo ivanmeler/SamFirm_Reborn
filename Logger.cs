@@ -26,12 +26,12 @@ namespace SamFirm
         return;
       if (Logger.form.log_textbox.InvokeRequired)
       {
-        Logger.form.log_textbox.Invoke((Delegate) (() =>
+        Logger.form.log_textbox.Invoke((Delegate)((Action)(() =>
         {
           if (Logger.form.log_textbox.Lines.Length <= 30)
             return;
           Logger.form.log_textbox.Text.Remove(0, Logger.form.log_textbox.GetFirstCharIndexFromLine(1));
-        }));
+        })));
       }
       else
       {
@@ -52,11 +52,11 @@ namespace SamFirm
         Console.Write(str);
       else if (Logger.form.log_textbox.InvokeRequired)
       {
-        Logger.form.log_textbox.Invoke((Delegate) (() =>
+        Logger.form.log_textbox.Invoke((Delegate)((Action)(() =>
         {
           Logger.form.log_textbox.AppendText(str);
           Logger.form.log_textbox.ScrollToCaret();
-        }));
+        })));
       }
       else
       {

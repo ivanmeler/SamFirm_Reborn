@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyCompany("")]
-[assembly: Extension]
+//[assembly: Extension]
 [assembly: AssemblyProduct("SamFirm")]
 [assembly: AssemblyFileVersion("0.3.6.0")]
 [assembly: AssemblyDescription("")]
