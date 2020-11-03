@@ -47,6 +47,9 @@
     <Reference Include="Microsoft.WindowsAPICodePack.Shell">
       <HintPath>lib\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack">
+      <HintPath>lib\Microsoft.WindowsAPICodePack.dll</HintPath>
+    </Reference>
     <Reference Include="System.XML" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
@@ -81,5 +84,25 @@
     <EmbeddedResource Include="Form1.resx" />
     <EmbeddedResource Include="Properties\Resources.resx" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="samsung\AgentModule.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="samsung\CommonModule.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="samsung\GlobalUtil.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AgentModule.dll" />
+    <Content Include="CommonModule.dll" />
+    <Content Include="GlobalUtil.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /y $(ProjectDir)samsung\AgentModule.dll  $(ProjectDir)$(OutDir)
+xcopy /y $(ProjectDir)samsung\CommonModule.dll $(ProjectDir)$(OutDir)
+xcopy /y $(ProjectDir)samsung\GlobalUtil.dll $(ProjectDir)$(OutDir)
+</PostBuildEvent>
+  </PropertyGroup>
 </Project>
