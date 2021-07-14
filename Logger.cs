@@ -61,14 +61,18 @@ namespace SamFirm
 
     public static void SaveLog()
     {
+      string AppLocation = System.AppDomain.CurrentDomain.BaseDirectory;
+      string LogFile = AppLocation + "SamFirm.log";
+      string OldLogFile = AppLocation + "SamFirm.log.old";
+
       if (string.IsNullOrEmpty(Logger.form.log_textbox.Text))
         return;
-      if (File.Exists("SamFirm.log") && new FileInfo("SamFirm.log").Length > 2097152L)
+      if (File.Exists(LogFile) && new FileInfo(LogFile).Length > 2097152L)
       {
-        File.Delete("SamFirm.log.old");
-        File.Move("SamFirm.log", "SamFirm.log.old");
+        File.Delete(OldLogFile);
+        File.Move(LogFile, OldLogFile);
       }
-      using (TextWriter textWriter = (TextWriter) new StreamWriter((Stream) new FileStream("SamFirm.log", FileMode.Append)))
+      using (TextWriter textWriter = (TextWriter) new StreamWriter((Stream) new FileStream(LogFile, FileMode.Append)))
       {
         textWriter.WriteLine();
         textWriter.WriteLine(Logger.GetTimeDate());
