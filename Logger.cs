@@ -65,20 +65,24 @@ namespace SamFirm
       string LogFile = AppLocation + "SamFirm.log";
       string OldLogFile = AppLocation + "SamFirm.log.old";
 
-      if (string.IsNullOrEmpty(Logger.form.log_textbox.Text))
-        return;
-      if (File.Exists(LogFile) && new FileInfo(LogFile).Length > 2097152L)
+      try
       {
-        File.Delete(OldLogFile);
-        File.Move(LogFile, OldLogFile);
+        if (string.IsNullOrEmpty(Logger.form.log_textbox.Text))
+          return;
+        if (File.Exists(LogFile) && new FileInfo(LogFile).Length > 2097152L)
+        {
+          File.Delete(OldLogFile);
+          File.Move(LogFile, OldLogFile);
+        }
+        using (TextWriter textWriter = new StreamWriter(new FileStream(LogFile, FileMode.Append)))
+        {
+          textWriter.WriteLine();
+          textWriter.WriteLine(Logger.GetTimeDate());
+          foreach (string line in Logger.form.log_textbox.Lines)
+            textWriter.WriteLine(line);
+        }
       }
-      using (TextWriter textWriter = (TextWriter) new StreamWriter((Stream) new FileStream(LogFile, FileMode.Append)))
-      {
-        textWriter.WriteLine();
-        textWriter.WriteLine(Logger.GetTimeDate());
-        foreach (string line in Logger.form.log_textbox.Lines)
-          textWriter.WriteLine(line);
-      }
+      catch { }
     }
   }
 }

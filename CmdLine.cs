@@ -14,8 +14,10 @@ namespace SamFirm
     private static string folder = string.Empty;
     private static bool binary = false;
     private static bool autodecrypt = false;
+    private static bool unzip = true;
     private static string metafile = string.Empty;
     private static string fwdest = string.Empty;
+    private static Command.Firmware dfw;
     private static bool checkonly = false;
     public static CmdLine.ProgressBarInfo progressBar = new CmdLine.ProgressBarInfo();
 
@@ -52,18 +54,39 @@ namespace SamFirm
     {
       Logger.WriteLog("========== SamFirm Firmware Decrypter ==========\n", false);
       Logger.WriteLog("Decrypting file " + CmdLine.file + "...", false);
+      string outputFile = Path.GetFileNameWithoutExtension(CmdLine.file);
       CmdLine.CreateProgressbar();
       if (CmdLine.file.EndsWith(".enc2"))
         Crypto.SetDecryptKey(CmdLine.region, CmdLine.model, CmdLine.version);
       else if (CmdLine.file.EndsWith(".enc4"))
         Crypto.SetDecryptKey(CmdLine.version, CmdLine.logicValue);
-      if (Crypto.Decrypt(CmdLine.file, Path.GetFileNameWithoutExtension(CmdLine.file), false) != 0)
+      return DecryptToFileOrDirectory(CmdLine.dfw, outputFile);
+    }
+
+    private static int DecryptToFileOrDirectory(Command.Firmware fw, string outputFile)
+    {
+      if (CmdLine.unzip)
+      {
+        string outputDirectory = Path.Combine(Path.GetDirectoryName(outputFile), Path.GetFileNameWithoutExtension(outputFile));
+        string metadataFile = Path.Combine(outputDirectory, "FirmwareInfo.txt");
+        Logger.WriteLog("Unzipping to " + outputDirectory + "...", false);
+        if (Crypto.DecryptAndUnzip(CmdLine.file, outputDirectory, false) != 0)
+        {
+          Logger.WriteLog("\nError decrypting and unzipping file", false);
+          Logger.WriteLog("Please make sure the filename is not modified and verify the version / logicValue argument", false);
+          return 3;
+        }
+        CmdLine.SaveMeta(fw, metadataFile);
+      }
+      else if (Crypto.Decrypt(CmdLine.file, outputFile, false) != 0)
       {
         Logger.WriteLog("\nError decrypting file", false);
         Logger.WriteLog("Please make sure the filename is not modified and verify the version / logicValue argument", false);
         File.Delete(Path.GetFileNameWithoutExtension(CmdLine.file));
         return 3;
       }
+      if (!string.IsNullOrEmpty(CmdLine.metafile))
+        CmdLine.SaveMeta(fw, CmdLine.metafile);
       Logger.WriteLog("\nDecrypting successful", false);
       return 0;
     }
@@ -97,7 +120,8 @@ namespace SamFirm
         fw = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.version, CmdLine.binary, false);
       if (fw.Version == null)
         return 2;
-      string str = Path.Combine(CmdLine.folder, fw.Filename);
+      dfw = fw;
+      CmdLine.file = Path.Combine(CmdLine.folder, fw.Filename);
       Logger.WriteLog("Downloading...\n", false);
       CmdLine.CreateProgressbar();
       int num1;
@@ -105,7 +129,7 @@ namespace SamFirm
       {
         Utility.ReconnectCmdLine();
         Utility.ReconnectDownload = false;
-        num1 = Command.Download(fw.Path, fw.Filename, fw.Version, fw.Region, fw.Model_Type, str, fw.Size, false);
+        num1 = Command.Download(fw.Path, fw.Filename, fw.Version, fw.Region, fw.Model_Type, CmdLine.file, fw.Size, false);
       }
       while (Utility.ReconnectDownload);
       if (num1 != 200 && num1 != 206)
@@ -115,9 +139,9 @@ namespace SamFirm
       }
       if (CmdLine.autodecrypt)
       {
-        if (str.EndsWith(".enc2"))
+        if (CmdLine.file.EndsWith(".enc2"))
           Crypto.SetDecryptKey(fw.Region, fw.Model, fw.Version);
-        else if (str.EndsWith(".enc4"))
+        else if (CmdLine.file.EndsWith(".enc4"))
         {
           if (fw.BinaryNature == 1)
             Crypto.SetDecryptKey(fw.Version, fw.LogicValueFactory);
@@ -126,17 +150,22 @@ namespace SamFirm
         }
         Logger.WriteLog("\nDecrypting...\n", false);
         CmdLine.CreateProgressbar();
-        CmdLine.fwdest = Path.Combine(Path.GetDirectoryName(str), Path.GetFileNameWithoutExtension(fw.Filename));
-        int num2 = Crypto.Decrypt(str, CmdLine.fwdest, false);
-        File.Delete(str);
-        if (num2 != 0)
-        {
-          File.Delete(CmdLine.fwdest);
-          return 3;
-        }
+        CmdLine.fwdest = Path.Combine(Path.GetDirectoryName(CmdLine.file), Path.GetFileNameWithoutExtension(fw.Filename));
+        DecryptToFileOrDirectory(fw, CmdLine.fwdest);
+        File.Delete(CmdLine.file);
+        //int num2 = Crypto.Decrypt(str, CmdLine.fwdest, false);
+        //File.Delete(str);
+        //if (num2 != 0)
+        //{
+        //  File.Delete(CmdLine.fwdest);
+        //  return 3;
+        //}
       }
-      if (!string.IsNullOrEmpty(CmdLine.metafile))
-        CmdLine.SaveMeta(fw);
+      else
+      {
+        if (!string.IsNullOrEmpty(CmdLine.metafile))
+          CmdLine.SaveMeta(fw, CmdLine.metafile);
+      }
       Logger.WriteLog("\nFinished", false);
       return 0;
     }
@@ -187,19 +216,19 @@ namespace SamFirm
       Logger.WriteLog("Update check:", false);
       Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-binary]", false);
       Logger.WriteLog("\nDecrypting:", false);
-      Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data]", false);
-      Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc4] -version [pda/csc/phone/data] -logicValue [logicValue]", false);
+      Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data] [-meta metafile]", false);
+      Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc4] -version [pda/csc/phone/data] -logicValue [logicValue] [-meta metafile]", false);
       Logger.WriteLog("\nDownloading:", false);
-      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt]", false);
+      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt] [-nozip] [-meta metafile]", false);
     }
 
-    private static void SaveMeta(Command.Firmware fw)
+    public static void SaveMeta(Command.Firmware fw, string metafile)
     {
-      if (fw.Version == null || string.IsNullOrEmpty(CmdLine.fwdest))
+      if (fw.Version == null)
         return;
-      if (!string.IsNullOrEmpty(Path.GetDirectoryName(CmdLine.metafile)) && !Directory.Exists(Path.GetDirectoryName(CmdLine.metafile)))
-        Directory.CreateDirectory(Path.GetDirectoryName(CmdLine.metafile));
-      using (TextWriter text = (TextWriter) File.CreateText(CmdLine.metafile))
+      if (!string.IsNullOrEmpty(Path.GetDirectoryName(metafile)) && !Directory.Exists(Path.GetDirectoryName(metafile)))
+        Directory.CreateDirectory(Path.GetDirectoryName(metafile));
+      using (TextWriter text = (TextWriter) File.CreateText(metafile))
       {
         text.WriteLine("[SamFirmData]");
         text.WriteLine("Model=" + fw.Model);
@@ -207,9 +236,12 @@ namespace SamFirm
         text.WriteLine("Region=" + fw.Region);
         text.WriteLine("Version=" + fw.Version);
         text.WriteLine("OS=" + fw.OS);
-        text.WriteLine("Filesize=" + (object) new FileInfo(CmdLine.fwdest).Length);
-        text.WriteLine("Filename=" + CmdLine.fwdest);
-        text.WriteLine("LastModified=" + fw.LastModified);
+        if (!string.IsNullOrEmpty(CmdLine.fwdest) && File.Exists(CmdLine.fwdest))
+        {
+          text.WriteLine("Filesize=" + (object)new FileInfo(CmdLine.fwdest).Length);
+          text.WriteLine("Filename=" + CmdLine.fwdest);
+        }
+        text.WriteLine("ReleaseDate=" + fw.LastModified);
       }
     }
 
@@ -270,6 +302,10 @@ namespace SamFirm
           case "-autodecrypt":
             --index1;
             CmdLine.autodecrypt = true;
+            break;
+          case "-nozip":
+            --index1;
+            CmdLine.unzip = false;
             break;
           case "-c":
             --index1;
