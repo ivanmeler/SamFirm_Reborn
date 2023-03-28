@@ -26,11 +26,11 @@ namespace SamFirm
       string authv = $"FUS nonce=\"\", signature=\"\", nc=\"\", type=\"\", realm=\"\", newauth=\"1\"";
       wr.Headers["Authorization"] = authv;
       wr.ContentLength = 0L;
-      using (HttpWebResponse responseFus = (HttpWebResponse) wr.GetResponseFUS())
+      using (HttpWebResponse responseFus = (HttpWebResponse)wr.GetResponseFUS())
       {
         if (responseFus == null)
           return 901;
-        int statusCode = (int) responseFus.StatusCode;
+        int statusCode = (int)responseFus.StatusCode;
         return statusCode;
       }
     }
@@ -47,17 +47,15 @@ namespace SamFirm
 
     private static int XMLFUSRequest(string URL, string xml, out string xmlresponse)
     {
-      xmlresponse = (string) null;
+      xmlresponse = (string)null;
       HttpWebRequest wr = KiesRequest.Create(URL);
       wr.Method = "POST";
-      ////wr.Headers["Authorization"] = "FUS nonce=\"\", signature=\"" + Imports.GetAuthorization(Web.Nonce) + "\", nc=\"\", type=\"\", realm=\"\"";
-      //wr.Headers.Add(Imports.GetAuthorization(Web.Nonce));
       wr.Headers["Authorization"] = AuthHeaderNoNonce;
       byte[] bytes = Encoding.ASCII.GetBytes(Regex.Replace(xml, "\\r\\n?|\\n|\\t", string.Empty));
-      wr.ContentLength = (long) bytes.Length;
+      wr.ContentLength = (long)bytes.Length;
       using (Stream requestStream = wr.GetRequestStream())
         requestStream.Write(bytes, 0, bytes.Length);
-      using (HttpWebResponse responseFus = (HttpWebResponse) wr.GetResponseFUS())
+      using (HttpWebResponse responseFus = (HttpWebResponse)wr.GetResponseFUS())
       {
         if (responseFus == null)
           return 901;
@@ -72,7 +70,7 @@ namespace SamFirm
             return 900;
           }
         }
-        return (int) responseFus.StatusCode;
+        return (int)responseFus.StatusCode;
       }
     }
 
@@ -98,7 +96,6 @@ namespace SamFirm
       long bytesTransferred = 0;
       HttpWebRequest wr = KiesRequest.Create("http://cloud-neofussvr.sslcs.cdngc.net/NF_DownloadBinaryForMass.do?file=" + path + file);
       wr.Method = "GET";
-      //wr.Headers["Authorization"] = Imports.GetAuthorization(Web.Nonce).Replace("Authorization: ", "").Replace("nonce=\"", "nonce=\"" + Web.Nonce);
       wr.Headers["Authorization"] = AuthHeaderWithNonce;
       wr.Timeout = 25000;
       wr.ReadWriteTimeout = 25000;
@@ -111,11 +108,11 @@ namespace SamFirm
           return 200;
         }
         Logger.WriteLog("File exists. Resuming download...", false);
-        //wr.AddRange((int) length); // Kåre: Dette lager en feil, hvis nedlasting fortsettes når filstørrelse har passert 2 GByte, siden AddRange da legger til en negativ range!
-        wr.AddRange(length);  // Bruker en extension, som takler long
+        //wr.AddRange((int) length); // This creates an error, if download continues when file size has exceeded 2 GByte, since AddRange then adds a negative range!
+        wr.AddRange(length);  // Fixed using an extension, handling range typed as long
         bytesTransferred = length;
       }
-      using (HttpWebResponse responseFus = (HttpWebResponse) wr.GetResponseFUS())
+      using (HttpWebResponse responseFus = (HttpWebResponse)wr.GetResponseFUS())
       {
         if (responseFus == null)
         {
@@ -124,7 +121,7 @@ namespace SamFirm
         }
         if (responseFus.StatusCode != HttpStatusCode.OK && responseFus.StatusCode != HttpStatusCode.PartialContent)
         {
-          Logger.WriteLog("Error downloading: " + (object) (int) responseFus.StatusCode, false);
+          Logger.WriteLog("Error downloading: " + (object)(int)responseFus.StatusCode, false);
         }
         else
         {
@@ -137,7 +134,7 @@ namespace SamFirm
             try
             {
               Utility.PreventDeepSleep(Utility.PDSMode.Start);
-              using (BinaryWriter binaryWriter = new BinaryWriter((Stream) new FileStream(saveTo, FileMode.Append)))
+              using (BinaryWriter binaryWriter = new BinaryWriter((Stream)new FileStream(saveTo, FileMode.Append)))
               {
                 int count;
                 do
@@ -148,7 +145,7 @@ namespace SamFirm
                     if (Web.form.PauseDownload)
                       break;
                   }
-                  bytesTransferred += (long) (count = responseFus.GetResponseStream().Read(buffer, 0, buffer.Length));
+                  bytesTransferred += (long)(count = responseFus.GetResponseStream().Read(buffer, 0, buffer.Length));
                   if (count > 0)
                   {
                     binaryWriter.Write(buffer, 0, count);
@@ -188,64 +185,36 @@ namespace SamFirm
             }
           }
         }
-        return (int) responseFus.StatusCode;
+        return (int)responseFus.StatusCode;
       }
     }
-        //private static bool AddRange(HttpWebRequest webRequest, string from, string to)
-        //{
-        //    const string rangeSpecifier = "bytes";
-        //    string text = webRequest.Headers["Range"];
-        //    if (text == null || text.Length == 0)
-        //    {
-        //        text = rangeSpecifier + "=";
-        //    }
-        //    else
-        //    {
-        //        if (string.Compare(text.Substring(0, text.IndexOf('=')), rangeSpecifier, StringComparison.OrdinalIgnoreCase) != 0)
-        //        {
-        //            return false;
-        //        }
+  }
 
-        //        text = string.Empty;
-        //    }
+  public static class Extensions
+  {
+    static MethodInfo httpWebRequestAddRangeHelper = typeof(WebHeaderCollection).GetMethod
+                                    ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
+    /// <summary>
+    /// Adds a byte range header to a request for a specific range from the beginning or end of the requested data.
+    /// </summary>
+    /// <param name="request">The <see cref="System.Web.HttpWebRequest"/> to add the range specifier to.</param>
+    /// <param name="start">The starting or ending point of the range.</param>
+    public static void AddRange(this HttpWebRequest request, long start) { request.AddRange(start, -1L); }
 
-        //    text += from.ToString();
-        //    if (to != null)
-        //    {
-        //        text = text + "-" + to;
-        //    }
-        //    webRequest.Headers["Range"] = text;
-        //    return true;
-        //}
-
-
-    }
-
-    public static class Extensions
+    /// <summary>Adds a byte range header to the request for a specified range.</summary>
+    /// <param name="request">The <see cref="System.Web.HttpWebRequest"/> to add the range specifier to.</param>
+    /// <param name="start">The position at which to start sending data.</param>
+    /// <param name="end">The position at which to stop sending data.</param>
+    public static void AddRange(this HttpWebRequest request, long start, long end)
     {
-        static MethodInfo httpWebRequestAddRangeHelper = typeof(WebHeaderCollection).GetMethod
-                                        ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
-        /// <summary>
-        /// Adds a byte range header to a request for a specific range from the beginning or end of the requested data.
-        /// </summary>
-        /// <param name="request">The <see cref="System.Web.HttpWebRequest"/> to add the range specifier to.</param>
-        /// <param name="start">The starting or ending point of the range.</param>
-        public static void AddRange(this HttpWebRequest request, long start) { request.AddRange(start, -1L); }
+      if (request == null) throw new ArgumentNullException("request");
+      if (start < 0) throw new ArgumentOutOfRangeException("start", "Starting byte cannot be less than 0.");
+      if (end < start) end = -1;
 
-        /// <summary>Adds a byte range header to the request for a specified range.</summary>
-        /// <param name="request">The <see cref="System.Web.HttpWebRequest"/> to add the range specifier to.</param>
-        /// <param name="start">The position at which to start sending data.</param>
-        /// <param name="end">The position at which to stop sending data.</param>
-        public static void AddRange(this HttpWebRequest request, long start, long end)
-        {
-            if (request == null) throw new ArgumentNullException("request");
-            if (start < 0) throw new ArgumentOutOfRangeException("start", "Starting byte cannot be less than 0.");
-            if (end < start) end = -1;
+      string key = "Range";
+      string val = string.Format("bytes={0}-{1}", start, end == -1 ? "" : end.ToString());
 
-            string key = "Range";
-            string val = string.Format("bytes={0}-{1}", start, end == -1 ? "" : end.ToString());
-
-            httpWebRequestAddRangeHelper.Invoke(request.Headers, new object[] { key, val });
-        }
+      httpWebRequestAddRangeHelper.Invoke(request.Headers, new object[] { key, val });
     }
+  }
 }

@@ -14,9 +14,9 @@ namespace SamFirm
 
         public static byte[] DecryptNonce(string inp)
         {
-            Aes aes = new AesManaged();
+          using (AesManaged aes = new AesManaged())
+          {
             byte[] bytes = Convert.FromBase64String(inp);
-//            Console.WriteLine($"base64decoded: {BitConverter.ToString(bytes).Replace("-", "").ToLower()}");
             aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
             byte[] key = Encoding.UTF8.GetBytes(KEY_1);
@@ -26,20 +26,22 @@ namespace SamFirm
             var decryptor = aes.CreateDecryptor(key, iv);
             byte[] decrypted = decryptor.TransformFinalBlock(bytes, 0, bytes.Length);
             return decrypted;
+          }
         }
 
         public static string GetAuth(byte[] nonce)
         {
             var keydata = nonce.Select(c => c % 16).ToArray();
             var fkey = get_fkey(keydata);
-            AesManaged aes = new AesManaged();
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
-            byte[] iv = fkey.Take(16).ToArray();
-            var encryptor = aes.CreateEncryptor(fkey, iv);
-            byte[] auth = encryptor.TransformFinalBlock(nonce, 0, nonce.Length);
-            //Console.WriteLine($"Auth array: {BitConverter.ToString(auth).Replace("-", "").ToLower()}");
-            return Convert.ToBase64String(auth);
+            using (AesManaged aes = new AesManaged())
+            {
+              aes.Mode = CipherMode.CBC;
+              aes.Padding = PaddingMode.PKCS7;
+              byte[] iv = fkey.Take(16).ToArray();
+              var encryptor = aes.CreateEncryptor(fkey, iv);
+              byte[] auth = encryptor.TransformFinalBlock(nonce, 0, nonce.Length);
+              return Convert.ToBase64String(auth);
+            }
         }
 
         public static byte[] get_fkey(int[] inp)
@@ -50,7 +52,6 @@ namespace SamFirm
                 key += KEY_1[inp[i]];
             }
             key += KEY_2;
-            //Console.WriteLine(key);
             return Encoding.UTF8.GetBytes(key);
         }
 

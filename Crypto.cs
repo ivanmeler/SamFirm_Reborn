@@ -74,46 +74,6 @@ namespace SamFirm
     {
       using (FileStream fileStream1 = new FileStream(encryptedFile, FileMode.Open))
       {
-        //if (!Directory.Exists(outputDirectory))
-        //{
-        //  Directory.CreateDirectory(outputDirectory);
-        //}
-
-        //using (ZipInputStream s = new ZipInputStream(fileStream1, 64 * 1024))
-        //{
-        //  ZipEntry entry;
-        //  byte[] data = new byte[64 * 1024];
-
-        //  while ((entry = s.GetNextEntry()) != null)
-        //  {
-        //    if (entry.IsFile)
-        //    {
-        //      while (entry.CanDecompress)
-        //      {
-        //        string outputFile = Path.Combine(outputDirectory, entry.Name);
-        //        string directory = Path.GetDirectoryName(outputFile);
-        //        if (!Directory.Exists(directory))
-        //        {
-        //          Directory.CreateDirectory(directory);
-        //        }
-
-        //        using (FileStream fileStream2 = new FileStream(outputFile, FileMode.Create))
-        //        {
-        //          int size = s.Read(data, 0, data.Length);
-        //          if (size > 0)
-        //          {
-        //            fileStream2.Write(data, 0, size);
-        //          }
-        //          else
-        //          {
-        //            break;
-        //          }
-        //        }
-        //      }
-        //    }
-        //  }
-        //}
-
         RijndaelManaged rijndaelManaged = new RijndaelManaged();
         rijndaelManaged.Mode = CipherMode.ECB;
         rijndaelManaged.BlockSize = 128;
