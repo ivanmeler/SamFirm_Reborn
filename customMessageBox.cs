@@ -54,7 +54,7 @@ namespace SamFirm
 
     private void InitializeComponent()
     {
-      ComponentResourceManager componentResourceManager = new ComponentResourceManager(typeof (customMessageBox));
+      var resources = new ComponentResourceManager(typeof (customMessageBox));
       this.button1 = new Button();
       this.button2 = new Button();
       this.button3 = new Button();
@@ -101,10 +101,10 @@ namespace SamFirm
       this.Controls.Add((Control) this.button3);
       this.Controls.Add((Control) this.button2);
       this.Controls.Add((Control) this.button1);
-      this.Icon = (Icon) componentResourceManager.GetObject("$this.Icon");
+      this.Icon = (Icon) resources.GetObject("$this.Icon");
       this.MaximumSize = new Size(387, 133);
       this.MinimumSize = new Size(387, 133);
-      this.Name = nameof (customMessageBox);
+      this.Name = "customMessageBox";
       this.Text = "SamFirm";
       ((ISupportInitialize) this.pictureBox1).EndInit();
       this.ResumeLayout(false);

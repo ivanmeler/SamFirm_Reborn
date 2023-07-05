@@ -90,16 +90,16 @@ namespace SamFirm
       return Marshal.GetDelegateForFunctionPointer(Imports.GetProcAddress(module, name), typeof (T)) as T;
     }
 
-    public static string GetAuthorization(string Nonce)
-    {
-      if (Imports.mod == IntPtr.Zero && Imports.LoadModule("AgentModule.dll") != 0)
-        return string.Empty;
-      Imports.Auth_t authT = Imports.load_function<Imports.Auth_t>(Imports.mod, "?MakeAuthorizationHeaderWithGeneratedNonceValueAndAMModule@AgentNetworkModule@@CAPB_WPB_W@Z");
-      IntPtr hglobalUni = Marshal.StringToHGlobalUni(Nonce);
-      string stringUni = Marshal.PtrToStringUni(authT(hglobalUni));
-      Marshal.FreeHGlobal(hglobalUni);
-      return stringUni;
-    }
+    //public static string GetAuthorization(string Nonce)
+    //{
+    //  if (Imports.mod == IntPtr.Zero && Imports.LoadModule("AgentModule.dll") != 0) // 32-bits utgave - har gått over til newMethod for Nonce
+    //    return string.Empty;
+    //  Imports.Auth_t authT = Imports.load_function<Imports.Auth_t>(Imports.mod, "?MakeAuthorizationHeaderWithGeneratedNonceValueAndAMModule@AgentNetworkModule@@CAPB_WPB_W@Z");
+    //  IntPtr hglobalUni = Marshal.StringToHGlobalUni(Nonce);
+    //  string stringUni = Marshal.PtrToStringUni(authT(hglobalUni));
+    //  Marshal.FreeHGlobal(hglobalUni);
+    //  return stringUni;
+    //}
 
     public enum EXECUTION_STATE : uint
     {

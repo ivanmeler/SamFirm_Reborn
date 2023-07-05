@@ -63,6 +63,7 @@ namespace SamFirm
       xelement.Element((XName) "DEVICE_PHONE_FONT_VERSION").Element((XName) "Data").Value = phonever;
       xelement.Element((XName) "DEVICE_FW_VERSION").Element((XName) "Data").Value = pdaver + "/" + cscver + "/" + phonever + "/" + dataver;
       xelement.Element((XName) "BINARY_NATURE").Element((XName) "Data").Value = Convert.ToInt32(BinaryNature).ToString();
+      //xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(pdaver + "/" + cscver + "/" + phonever + "/" + dataver, Web.Nonce);
       xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(pdaver + "/" + cscver + "/" + phonever + "/" + dataver, Web.Nonce);
       return xdocument.ToString();
     }

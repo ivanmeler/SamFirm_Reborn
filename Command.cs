@@ -72,6 +72,11 @@ namespace SamFirm
         firmware.ConnectionError = true;
         return firmware;
       }
+      //Logger.WriteLog($"Encrypted Nonce; {Web.EncryptedNonce}", false);
+      //Logger.WriteLog($"Nonce; {Web.Nonce}", false);
+      ////Logger.WriteLog($"Auth signature: {Imports.GetAuthorization(Web.Nonce)}");
+      //Logger.WriteLog($"Auth signature: {Web.AuthHeaderNoNonce}");
+
       string xmlresponse;
       int htmlstatus = Web.DownloadBinaryInform(Xml.GetXmlBinaryInform(model, region, pda, csc, phone, data, BinaryNature), out xmlresponse);
       if (htmlstatus != 200 || Utility.GetXMLStatusCode(xmlresponse) != 200)
