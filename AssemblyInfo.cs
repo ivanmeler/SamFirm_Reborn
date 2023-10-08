@@ -4,10 +4,10 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SamFirm Reborn")]
-[assembly: AssemblyFileVersion("0.3.6.4")]
+[assembly: AssemblyFileVersion("0.3.6.5")]
 [assembly: AssemblyDescription("BornAgain Edition")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCopyright("Copyright zxz0O0 ©  2015 / Ivan Meler 2021 / KSmith 2023")]
+[assembly: AssemblyCopyright("Copyright zxz0O0 ©  2015 / Ivan Meler 2023 / KSmith 2023")]
 [assembly: AssemblyTitle("SamFirm Reborn")]
 [assembly: AssemblyTrademark("")]
 [assembly: ComVisible(false)]
