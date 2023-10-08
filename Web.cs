@@ -94,7 +94,7 @@ namespace SamFirm
       bool GUI = true)
     {
       long bytesTransferred = 0;
-      HttpWebRequest wr = KiesRequest.Create("http://cloud-neofussvr.sslcs.cdngc.net/NF_DownloadBinaryForMass.do?file=" + path + file);
+      HttpWebRequest wr = KiesRequest.Create("http://cloud-neofussvr.samsungmobile.com/NF_DownloadBinaryForMass.do?file=" + path + file);
       wr.Method = "GET";
       wr.Headers["Authorization"] = AuthHeaderWithNonce;
       wr.Timeout = 25000;
