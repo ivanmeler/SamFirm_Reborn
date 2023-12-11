@@ -65,6 +65,34 @@ namespace SamFirm
       xelement.Element((XName) "BINARY_NATURE").Element((XName) "Data").Value = Convert.ToInt32(BinaryNature).ToString();
       //xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(pdaver + "/" + cscver + "/" + phonever + "/" + dataver, Web.Nonce);
       xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(pdaver + "/" + cscver + "/" + phonever + "/" + dataver, Web.Nonce);
+
+      //hardcode EUX as Germany and EUY as Republic of Serbia
+      if (region == "EUX")
+      {
+        xelement.Add(
+            new XElement("DEVICE_AID_CODE",
+                new XElement("Data", region)),
+            new XElement("DEVICE_CC_CODE",
+                new XElement("Data", "DE")),
+            new XElement("MCC_NUM",
+                new XElement("Data", "262")),
+            new XElement("MNC_NUM",
+                new XElement("Data", "01"))
+        );
+      }
+      else if (region == "EUY")
+      {
+        xelement.Add(
+            new XElement("DEVICE_AID_CODE",
+                new XElement("Data", region)),
+            new XElement("DEVICE_CC_CODE",
+                new XElement("Data", "RS")),
+            new XElement("MCC_NUM",
+                new XElement("Data", "220")),
+            new XElement("MNC_NUM",
+                new XElement("Data", "01"))
+        );
+      }
       return xdocument.ToString();
     }
 
