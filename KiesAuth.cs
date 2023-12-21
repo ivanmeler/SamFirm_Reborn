@@ -8,9 +8,9 @@ namespace SamFirm
 {
     public static class KiesAuth
     {
-        private const string KEY_1 = "hqzdurufm2c8mf6bsjezu1qgveouv7c7";
+        private const string KEY_1 = "vicopx7dqu06emacgpnpy8j8zwhduwlh";
 
-        private const string KEY_2 = "w13r4cvf4hctaujv";
+        private const string KEY_2 = "9u7qab84rpc16gvk";
 
         public static byte[] DecryptNonce(string inp)
         {
