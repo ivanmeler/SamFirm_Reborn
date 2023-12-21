@@ -5,8 +5,106 @@ namespace SamFirm
 {
   internal class Xml
   {
-    private static string BinaryInit = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><FUSMsg>\r\n\t<FUSHdr>\r\n\t\t<ProtoVer>1</ProtoVer>\r\n\t\t<SessionID>0</SessionID>\r\n\t\t<MsgID>1</MsgID>\r\n\t</FUSHdr>\r\n\t<FUSBody>\r\n\t\t<Put>\r\n\t\t\t<CmdID>1</CmdID>\r\n\t\t\t<BINARY_FILE_NAME>\r\n\t\t\t\t<Data>SM-T805_AUT_1_20140929155250_b8l0mvlbba_fac.zip.enc2</Data>\r\n\t\t\t</BINARY_FILE_NAME>\r\n\t\t\t<BINARY_NATURE>\r\n\t\t\t\t<Data>0</Data>\r\n\t\t\t</BINARY_NATURE>\r\n\t\t\t<BINARY_VERSION>\r\n\t\t\t\t<Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>\r\n\t\t\t</BINARY_VERSION>\r\n\t\t\t<DEVICE_LOCAL_CODE>\r\n\t\t\t\t<Data>AUT</Data>\r\n\t\t\t</DEVICE_LOCAL_CODE>\r\n\t\t\t<DEVICE_MODEL_TYPE>\r\n\t\t\t\t<Data>9</Data>\r\n\t\t\t</DEVICE_MODEL_TYPE>\r\n            <LOGIC_CHECK>\r\n                <Data>805XXU1ANFU1ANXX</Data>\r\n            </LOGIC_CHECK>\r\n\t\t</Put>\r\n\t\t<Get>\r\n\t\t\t<CmdID>2</CmdID>\r\n\t\t\t<LATEST_FW_VERSION/>\r\n\t\t</Get>\r\n\t</FUSBody>\r\n</FUSMsg>";
-    private static string LatestVer = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><FUSMsg>\r\n\t<FUSHdr>\r\n\t\t<ProtoVer>1</ProtoVer>\r\n\t\t<SessionID>0</SessionID>\r\n\t\t<MsgID>1</MsgID>\r\n\t</FUSHdr>\r\n\t<FUSBody>\r\n\t\t<Put>\r\n\t\t\t<CmdID>1</CmdID>\r\n\t\t\t<ACCESS_MODE>\r\n\t\t\t\t<Data>2</Data>\r\n\t\t\t</ACCESS_MODE>\r\n\t\t\t<BINARY_NATURE>\r\n\t\t\t\t<Data>0</Data>\r\n\t\t\t</BINARY_NATURE>\r\n\t\t\t<CLIENT_LANGUAGE>\r\n\t\t\t\t<Type>String</Type>\r\n\t\t\t\t<Type>ISO 3166-1-alpha-3</Type>\r\n\t\t\t\t<Data>1033</Data>\r\n\t\t\t</CLIENT_LANGUAGE>\r\n\t\t\t<CLIENT_PRODUCT>\r\n\t\t\t\t<Data>Smart Switch</Data>\r\n\t\t\t</CLIENT_PRODUCT>\r\n\t\t\t<CLIENT_VERSION>\r\n\t\t\t\t<Data>4.3.23123_1</Data>\r\n\t\t\t</CLIENT_VERSION>\r\n\t\t\t<DEVICE_CONTENTS_DATA_VERSION>\r\n\t\t\t\t<Data>T805XXU1ANF6</Data>\r\n\t\t\t</DEVICE_CONTENTS_DATA_VERSION>\r\n\t\t\t<DEVICE_CSC_CODE2_VERSION>\r\n\t\t\t\t<Data>T805AUT1ANF1</Data>\r\n\t\t\t</DEVICE_CSC_CODE2_VERSION>\r\n\t\t\t<DEVICE_FW_VERSION>\r\n\t\t\t\t<Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>\r\n\t\t\t</DEVICE_FW_VERSION>\r\n\t\t\t<DEVICE_IMEI_PUSH>\r\n\t\t\t\t<Data>00000000000000</Data>\r\n\t\t\t</DEVICE_IMEI_PUSH>\r\n\t\t\t<DEVICE_LOCAL_CODE>\r\n\t\t\t\t<Data>AUT</Data>\r\n\t\t\t</DEVICE_LOCAL_CODE>\r\n\t\t\t<DEVICE_MODEL_NAME>\r\n\t\t\t\t<Data>SM-T805</Data>\r\n\t\t\t</DEVICE_MODEL_NAME>\r\n\t\t\t<DEVICE_PDA_CODE1_VERSION>\r\n\t\t\t\t<Data>T805XXU1ANE6</Data>\r\n\t\t\t</DEVICE_PDA_CODE1_VERSION>\r\n\t\t\t<DEVICE_PHONE_FONT_VERSION>\r\n\t\t\t\t<Data>T805XXU1ANF6</Data>\r\n\t\t\t</DEVICE_PHONE_FONT_VERSION>\r\n\t\t\t<DEVICE_PLATFORM>\r\n\t\t\t\t<Data>Android</Data>\r\n\t\t\t</DEVICE_PLATFORM>\r\n            <LOGIC_CHECK>\r\n                <Data>805XXU1ANFU1ANXX</Data>\r\n            </LOGIC_CHECK>\r\n\t\t</Put>\r\n\t\t<Get>\r\n\t\t\t<CmdID>2</CmdID>\r\n\t\t\t<LATEST_FW_VERSION/>\r\n\t\t</Get>\r\n\t</FUSBody>\r\n</FUSMsg>";
+        private static string BinaryInit = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<FUSMsg>
+    <FUSHdr>
+        <ProtoVer>1</ProtoVer>
+        <SessionID>0</SessionID>
+        <MsgID>1</MsgID>
+    </FUSHdr>
+    <FUSBody>
+        <Put>
+            <CmdID>1</CmdID>
+            <BINARY_FILE_NAME>
+                <Data>SM-T805_AUT_1_20140929155250_b8l0mvlbba_fac.zip.enc2</Data>
+            </BINARY_FILE_NAME>
+            <BINARY_NATURE>
+                <Data>0</Data>
+            </BINARY_NATURE>
+            <BINARY_VERSION>
+                <Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>
+            </BINARY_VERSION>
+            <DEVICE_LOCAL_CODE>
+                <Data>AUT</Data>
+            </DEVICE_LOCAL_CODE>
+            <DEVICE_MODEL_TYPE>
+                <Data>9</Data>
+            </DEVICE_MODEL_TYPE>
+            <LOGIC_CHECK>
+                <Data>805XXU1ANFU1ANXX</Data>
+            </LOGIC_CHECK>
+        </Put>
+        <Get>
+            <CmdID>2</CmdID>
+            <LATEST_FW_VERSION/>
+        </Get>
+    </FUSBody>
+</FUSMsg>";
+
+        private static string LatestVer = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<FUSMsg>
+    <FUSHdr>
+        <ProtoVer>1</ProtoVer>
+        <SessionID>0</SessionID>
+        <MsgID>1</MsgID>
+    </FUSHdr>
+    <FUSBody>
+        <Put>
+            <CmdID>1</CmdID>
+            <ACCESS_MODE>
+                <Data>2</Data>
+            </ACCESS_MODE>
+            <BINARY_NATURE>
+                <Data>0</Data>
+            </BINARY_NATURE>
+            <CLIENT_LANGUAGE>
+                <Type>String</Type>
+                <Type>ISO 3166-1-alpha-3</Type>
+                <Data>1033</Data>
+            </CLIENT_LANGUAGE>
+            <CLIENT_PRODUCT>
+                <Data>Smart Switch</Data>
+            </CLIENT_PRODUCT>
+            <CLIENT_VERSION>
+                <Data>4.3.23123_1</Data>
+            </CLIENT_VERSION>
+            <DEVICE_CONTENTS_DATA_VERSION>
+                <Data>T805XXU1ANF6</Data>
+            </DEVICE_CONTENTS_DATA_VERSION>
+            <DEVICE_CSC_CODE2_VERSION>
+                <Data>T805AUT1ANF1</Data>
+            </DEVICE_CSC_CODE2_VERSION>
+            <DEVICE_FW_VERSION>
+                <Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>
+            </DEVICE_FW_VERSION>
+            <DEVICE_IMEI_PUSH>
+                <Data>00000000000000</Data>
+            </DEVICE_IMEI_PUSH>
+            <DEVICE_LOCAL_CODE>
+                <Data>AUT</Data>
+            </DEVICE_LOCAL_CODE>
+            <DEVICE_MODEL_NAME>
+                <Data>SM-T805</Data>
+            </DEVICE_MODEL_NAME>
+            <DEVICE_PDA_CODE1_VERSION>
+                <Data>T805XXU1ANE6</Data>
+            </DEVICE_PDA_CODE1_VERSION>
+            <DEVICE_PHONE_FONT_VERSION>
+                <Data>T805XXU1ANF6</Data>
+            </DEVICE_PHONE_FONT_VERSION>
+            <DEVICE_PLATFORM>
+                <Data>Android</Data>
+            </DEVICE_PLATFORM>
+            <LOGIC_CHECK>
+                <Data>805XXU1ANFU1ANXX</Data>
+            </LOGIC_CHECK>
+        </Put>
+        <Get>
+            <CmdID>2</CmdID>
+            <LATEST_FW_VERSION/>
+        </Get>
+    </FUSBody>
+</FUSMsg>";
 
     public static string GetXMLValue(
       string xml,
