@@ -145,6 +145,7 @@ namespace SamFirm
     public static string GetXmlBinaryInform(
       string model,
       string region,
+      string imei,
       string pdaver,
       string cscver,
       string phonever,
@@ -155,6 +156,7 @@ namespace SamFirm
       XElement xelement = xdocument.Element((XName) "FUSMsg").Element((XName) "FUSBody").Element((XName) "Put");
       xelement.Element((XName) "DEVICE_MODEL_NAME").Element((XName) "Data").Value = model;
       xelement.Element((XName) "DEVICE_LOCAL_CODE").Element((XName) "Data").Value = region;
+      xelement.Element((XName) "DEVICE_IMEI_PUSH").Element((XName) "Data").Value = imei;
       xelement.Element((XName) "DEVICE_CONTENTS_DATA_VERSION").Element((XName) "Data").Value = dataver;
       xelement.Element((XName) "DEVICE_CSC_CODE2_VERSION").Element((XName) "Data").Value = cscver;
       xelement.Element((XName) "DEVICE_PDA_CODE1_VERSION").Element((XName) "Data").Value = pdaver;

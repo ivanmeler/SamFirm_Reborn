@@ -10,6 +10,7 @@ namespace SamFirm
     private static string file = string.Empty;
     private static string model = string.Empty;
     private static string region = string.Empty;
+    private static string imei = string.Empty;
     private static string logicValue = string.Empty;
     private static string folder = string.Empty;
     private static bool binary = false;
@@ -35,12 +36,12 @@ namespace SamFirm
       int num = -1;
       if (!string.IsNullOrEmpty(CmdLine.file))
       {
-        if (!string.IsNullOrEmpty(CmdLine.region) && !string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.version))
+        if (!string.IsNullOrEmpty(CmdLine.region) && !string.IsNullOrEmpty(CmdLine.imei) && !string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.version))
           num = CmdLine.DoDecrypt();
         else if (!string.IsNullOrEmpty(CmdLine.logicValue) && !string.IsNullOrEmpty(CmdLine.version))
           num = CmdLine.DoDecrypt();
       }
-      else if (!string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.region))
+      else if (!string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.imei) && !string.IsNullOrEmpty(CmdLine.region))
         num = !CmdLine.checkonly ? CmdLine.DoDownload() : CmdLine.DoCheck();
       if (num == -1)
       {
@@ -97,12 +98,12 @@ namespace SamFirm
       Command.Firmware firmware;
       if (string.IsNullOrEmpty(CmdLine.version))
       {
-        firmware = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.binary);
+        firmware = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.binary);
         if (firmware.FetchAttempts == 0)
           return 5;
       }
       else
-        firmware = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.version, CmdLine.binary, false);
+        firmware = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.version, CmdLine.binary, false);
       return firmware.Version == null ? 2 : 0;
     }
 
@@ -112,12 +113,12 @@ namespace SamFirm
       Command.Firmware fw;
       if (string.IsNullOrEmpty(CmdLine.version))
       {
-        fw = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.binary);
+        fw = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.binary);
         if (fw.FetchAttempts == 0)
           return 5;
       }
       else
-        fw = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.version, CmdLine.binary, false);
+        fw = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.version, CmdLine.binary, false);
       if (fw.Version == null)
         return 2;
       dfw = fw;
@@ -214,12 +215,12 @@ namespace SamFirm
     {
       Logger.WriteLog("Usage:\n", false);
       Logger.WriteLog("Update check:", false);
-      Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-binary]", false);
+      Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code] -imei [imei or serial number]\n                [-version [pda/csc/phone/data]] [-binary]", false);
       Logger.WriteLog("\nDecrypting:", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data] [-meta metafile]", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc4] -version [pda/csc/phone/data] -logicValue [logicValue] [-meta metafile]", false);
       Logger.WriteLog("\nDownloading:", false);
-      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt] [-nozip] [-meta metafile]", false);
+      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code] -imei [imei or serial number]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt] [-nozip] [-meta metafile]", false);
     }
 
     public static void SaveMeta(Command.Firmware fw, string metafile)
@@ -291,6 +292,9 @@ namespace SamFirm
             break;
           case "-region":
             CmdLine.region = args[index1].ToUpper();
+            break;
+          case "-imei":
+            CmdLine.imei = args[index1].ToUpper();
             break;
           case "-model":
             CmdLine.model = args[index1];

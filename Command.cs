@@ -9,6 +9,7 @@ namespace SamFirm
     public static Command.Firmware UpdateCheckAuto(
       string model,
       string region,
+      string imei,
       bool BinaryNature)
     {
       int num = 0;
@@ -19,7 +20,7 @@ namespace SamFirm
         if (!string.IsNullOrEmpty(info))
         {
           ++num;
-          firmware = Command.UpdateCheck(model, region, info, BinaryNature, true);
+          firmware = Command.UpdateCheck(model, region, imei, info, BinaryNature, true);
           if (firmware.Version == null)
           {
             if (firmware.ConnectionError)
@@ -38,6 +39,7 @@ namespace SamFirm
     public static Command.Firmware UpdateCheck(
       string model,
       string region,
+      string imei,
       string info,
       bool BinaryNature,
       bool AutoFetch = false)
@@ -50,12 +52,13 @@ namespace SamFirm
       string csc = Utility.InfoExtract(info, "csc");
       string phone = Utility.InfoExtract(info, "phone");
       string data = Utility.InfoExtract(info, "data");
-      return Command.UpdateCheck(model, region, pda, csc, phone, data, BinaryNature, AutoFetch);
+      return Command.UpdateCheck(model, region, imei, pda, csc, phone, data, BinaryNature, AutoFetch);
     }
 
     public static Command.Firmware UpdateCheck(
       string model,
       string region,
+      string imei,
       string pda,
       string csc,
       string phone,
@@ -78,7 +81,7 @@ namespace SamFirm
       //Logger.WriteLog($"Auth signature: {Web.AuthHeaderNoNonce}");
 
       string xmlresponse;
-      int htmlstatus = Web.DownloadBinaryInform(Xml.GetXmlBinaryInform(model, region, pda, csc, phone, data, BinaryNature), out xmlresponse);
+      int htmlstatus = Web.DownloadBinaryInform(Xml.GetXmlBinaryInform(model, region, imei, pda, csc, phone, data, BinaryNature), out xmlresponse);
       if (htmlstatus != 200 || Utility.GetXMLStatusCode(xmlresponse) != 200)
       {
         Logger.WriteLog("Error: Could not send BinaryInform. Status code " + (object) htmlstatus + "/" + (object) Utility.GetXMLStatusCode(xmlresponse), false);
