@@ -153,7 +153,7 @@ namespace SamFirm
                     {
                       int dlspeed = Utility.DownloadSpeed(bytesTransferred, sw);
                       if (dlspeed != -1)
-                        Web.form.lbl_speed.Invoke((Delegate)((Action)(() => Web.form.lbl_speed.Text = dlspeed.ToString() + " KB/s")));
+                        Web.form.labelSpeed.Invoke((Action)(() => Web.form.labelSpeed.Text = dlspeed.ToString() + " KB/s"));
                     }
                   }
                   if (GUI)
@@ -181,7 +181,7 @@ namespace SamFirm
             {
               Utility.PreventDeepSleep(Utility.PDSMode.Stop);
               if (GUI)
-                Web.form.lbl_speed.Invoke((Delegate)((Action)(() => Web.form.lbl_speed.Text = "0 KB/s")));
+                Web.form.labelSpeed.Invoke((Action)(() => Web.form.labelSpeed.Text = "0 KB/s"));
             }
           }
         }

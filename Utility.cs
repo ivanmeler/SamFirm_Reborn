@@ -1,9 +1,10 @@
-﻿using DamienG.Security.Cryptography;
+using DamienG.Security.Cryptography;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -15,29 +16,24 @@ namespace SamFirm
   {
     public static bool run_by_cmd = false;
     public static bool ReconnectDownload = false;
-    private static Stopwatch dswatch = new Stopwatch();
+    private static readonly Stopwatch dswatch = new Stopwatch();
     private static int interval = 0;
     private static long lastBread = 0;
     private static int lastSpeed = 0;
 
-    public static bool IsRunningOnMono()
-    {
-      return Type.GetType("Mono.Runtime") != null;
-    }
-
     public static void Reconnect(Action<object, EventArgs> action)
     {
       BackgroundWorker backgroundWorker = new BackgroundWorker();
-      backgroundWorker.DoWork += (DoWorkEventHandler) ((o, _e) =>
+      backgroundWorker.DoWork += (o, _e) =>
       {
         Thread.Sleep(1000);
         if (!Utility.CheckConnection("cloud-neofussvr.sslcs.cdngc.net", ref Utility.ReconnectDownload))
           return;
-        action((object) null, (EventArgs) new Form1.DownloadEventArgs()
+        action(null, new Form1.DownloadEventArgs
         {
           isReconnect = true
         });
-      });
+      };
       backgroundWorker.RunWorkerAsync();
     }
 
@@ -49,24 +45,19 @@ namespace SamFirm
     public static bool CheckConnection(string address, ref bool docheck)
     {
       bool flag = false;
-      Ping ping = new Ping();
-      while (docheck)
+      using (Ping ping = new Ping())
       {
-        if (!flag)
+        while (docheck && !flag)
         {
           try
           {
             flag = ping.Send(address, 2000).Status == IPStatus.Success;
           }
-          catch (PingException ex)
+          catch (PingException)
           {
           }
         }
-        else
-          goto label_6;
       }
-      flag = false;
-label_6:
       return flag;
     }
 
@@ -84,30 +75,25 @@ label_6:
       }
       if (Utility.dswatch.ElapsedMilliseconds <= 30000L)
         return;
-      int num = (int) Imports.SetThreadExecutionState(Imports.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+      Imports.SetThreadExecutionState(Imports.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
       Utility.PreventDeepSleep(Utility.PDSMode.Start);
     }
 
     public static bool CRCCheck(string file, byte[] crc)
     {
-      if (!System.IO.File.Exists(file))
+      if (!File.Exists(file))
         throw new FileNotFoundException("File for crc check not found");
       byte[] hash;
-      using (FileStream fileStream = System.IO.File.Open(file, FileMode.Open, FileAccess.Read))
-        hash = new Crc32().ComputeHash((Stream) fileStream);
+      using (FileStream fileStream = File.Open(file, FileMode.Open, FileAccess.Read))
+        hash = new Crc32().ComputeHash(fileStream);
       return crc.Compare(hash);
     }
 
     public static bool Compare(this byte[] arr1, byte[] arr2)
     {
-      if (arr1.Length != arr2.Length)
-        return false;
-      for (int index = 0; index < arr1.Length; ++index)
-      {
-        if ((int) arr1[index] != (int) arr2[index])
-          return false;
-      }
-      return true;
+      if (arr1 == null || arr2 == null)
+        return arr1 == arr2;
+      return arr1.SequenceEqual(arr2);
     }
 
     public static void ResetSpeed(long _lastBread)
@@ -126,8 +112,8 @@ label_6:
         return -1;
       }
       Utility.interval = 0;
-      double num1 = (double) sw.ElapsedMilliseconds / 1000.0;
-      int num2 = (int) Math.Floor((double) (bread - Utility.lastBread) / num1 / 1024.0);
+      double num1 = sw.ElapsedMilliseconds / 1000.0;
+      int num2 = (int) Math.Floor((bread - Utility.lastBread) / num1 / 1024.0);
       if (Utility.lastSpeed != 0)
         num2 = (Utility.lastSpeed + num2) / 2;
       Utility.lastSpeed = num2;
@@ -138,8 +124,8 @@ label_6:
 
     public static int Round(int num, int pos)
     {
-      double num1 = Math.Pow(10.0, (double) pos);
-      if (num1 > (double) num)
+      double num1 = Math.Pow(10.0, pos);
+      if (num1 > num)
         return num;
       return num / (int) num1 * (int) num1;
     }
@@ -159,15 +145,15 @@ label_6:
 
     public static int GetProgress(long value, long total)
     {
-      return (int) (float) ((double) value / (double) total * 100.0);
+      if (total == 0) return 0;
+      return (int) ((double) value / total * 100.0);
     }
 
     public static int GetXMLStatusCode(string xml)
     {
       if (string.IsNullOrEmpty(xml))
         return 0;
-      int result;
-      if (int.TryParse(Xml.GetXMLValue(xml, "FUSBody/Results/Status", (string) null, (string) null), out result))
+      if (int.TryParse(Xml.GetXMLValue(xml, "FUSBody/Results/Status", null, null), out int result))
         return result;
       return 666;
     }
@@ -177,23 +163,23 @@ label_6:
       if (string.IsNullOrEmpty(input))
         return string.Empty;
       StringBuilder stringBuilder = new StringBuilder();
-      int num1 = 0;
+      int offset = 0;
       if (input.EndsWith(".zip.enc2") || input.EndsWith(".zip.enc4"))
-        num1 = input.Length - 25;
-      foreach (int num2 in nonce)
+        offset = input.Length - 25;
+      foreach (int n in nonce)
       {
-        int num3 = num2 & 15;
-        if (input.Length <= num3 + num1)
+        int index = n & 15;
+        if (input.Length <= index + offset)
           return string.Empty;
-        stringBuilder.Append(input[num3 + num1]);
+        stringBuilder.Append(input[index + offset]);
       }
       return stringBuilder.ToString();
     }
 
     public static int CheckHTMLXMLStatus(int htmlstatus, int xmlstatus = 0)
     {
-      int num = xmlstatus == 0 ? htmlstatus : xmlstatus;
-      switch (num)
+      int status = xmlstatus == 0 ? htmlstatus : xmlstatus;
+      switch (status)
       {
         case 400:
           Logger.WriteLog("    Request was invalid. Are you sure the input data is correct?", false);
@@ -202,7 +188,7 @@ label_6:
           Logger.WriteLog("    Authorization failed", false);
           break;
       }
-      return num;
+      return status;
     }
 
     public static string InfoExtract(string info, string type)
@@ -210,20 +196,16 @@ label_6:
       string[] strArray = info.Split('/');
       if (strArray.Length < 2)
         return string.Empty;
-      switch (type)
+      switch (type.ToLower())
       {
         case "pda":
           return strArray[0];
         case "csc":
           return strArray[1];
         case "phone":
-          if (strArray.Length < 3 || string.IsNullOrEmpty(strArray[2]))
-            return strArray[0];
-          return strArray[2];
+          return (strArray.Length < 3 || string.IsNullOrEmpty(strArray[2])) ? strArray[0] : strArray[2];
         case "data":
-          if (strArray.Length < 4)
-            return strArray[0];
-          return strArray[3];
+          return (strArray.Length < 4) ? strArray[0] : strArray[3];
         default:
           return string.Empty;
       }
@@ -231,20 +213,17 @@ label_6:
 
     public static string GetHtml(string url)
     {
-      int num = 0;
-      while (true)
+      int attempts = 0;
+      while (attempts < 3)
       {
         try
         {
           using (WebClient webClient = new WebClient())
             return webClient.DownloadString(url);
         }
-        catch (WebException ex)
+        catch (WebException)
         {
-          if (num < 2)
-            ++num;
-          else
-            break;
+          attempts++;
         }
       }
       return string.Empty;
@@ -254,12 +233,9 @@ label_6:
     {
       try
       {
-        if (paused)
-          TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Paused);
-        else
-          TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
+        TaskbarManager.Instance.SetProgressState(paused ? TaskbarProgressBarState.Paused : TaskbarProgressBarState.Normal);
       }
-      catch (Exception ex)
+      catch (Exception)
       {
       }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.WindowsAPICodePack.Taskbar;
+using Microsoft.WindowsAPICodePack.Taskbar;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,493 +14,572 @@ using System.Windows.Forms;
 
 namespace SamFirm
 {
-  public class Form1 : Form
-  {
-    private bool SaveFileDialog = true;
-    private Command.Firmware FW;
-    public bool PauseDownload;
-    private string destinationfile;
-    private IContainer components;
-    private ComboBox model_textbox;
-    private Label model_lbl;
-    private Button download_button;
-    public RichTextBox log_textbox;
-    private Label region_lbl;
-    private ComboBox region_textbox;
-    private Label pda_lbl;
-    private TextBox pda_textbox;
-    private Label csc_lbl;
-    private TextBox csc_textbox;
-    private Button update_button;
-    private Label phone_lbl;
-    private TextBox phone_textbox;
-    private Label file_lbl;
-    private TextBox file_textbox;
-    private Label version_lbl;
-    private TextBox version_textbox;
-    private GroupBox groupBox1;
-    private CheckBox binary_checkbox;
-    private Label binary_lbl;
-    private ProgressBar progressBar;
-    private Button decrypt_button;
-    private GroupBox groupBox2;
-    private TextBox size_textbox;
-    private Label size_lbl;
-    private GroupBox groupBox3;
-    private CheckBox checkbox_manual;
-    private CheckBox checkbox_auto;
-    private CheckBox checkbox_autodecrypt;
-    private CheckBox checkbox_crc;
-    private ToolTip tooltip_binary;
-    public Label lbl_speed;
-    private Label label1;
-    private System.Windows.Forms.SaveFileDialog saveFileDialog1;
-    public Label lbl_transferred;
-    private Label imei_lbl;
-    private TextBox imei_textbox;
-    private ToolTip tooltip_binary_box;
-
-    public Form1()
+    public class Form1 : Form
     {
-      this.InitializeComponent();
-    }
+        private bool saveFileDialogEnabled = true;
+        private Command.Firmware firmware;
+        public bool PauseDownload;
+        private string destinationFile;
+        private IContainer components;
+        private ComboBox comboBoxModel;
+        private Label labelModel;
+        private Button buttonDownload;
+        public RichTextBox richTextBoxLog;
+        private Label labelRegion;
+        private ComboBox comboBoxRegion;
+        private Label labelPda;
+        private TextBox textBoxPda;
+        private Label labelCsc;
+        private TextBox textBoxCsc;
+        private Button buttonUpdate;
+        private Label labelPhone;
+        private TextBox textBoxPhone;
+        private Label labelFile;
+        private TextBox textBoxFile;
+        private Label labelVersion;
+        private TextBox textBoxVersion;
+        private GroupBox groupBoxInfo;
+        private CheckBox checkBoxBinary;
+        private Label labelBinary;
+        private ProgressBar progressBar;
+        private Button buttonDecrypt;
+        private GroupBox groupBoxDownload;
+        private TextBox textBoxSize;
+        private Label labelSize;
+        private GroupBox groupBoxManual;
+        private CheckBox checkBoxManual;
+        private CheckBox checkBoxAuto;
+        private CheckBox checkBoxAutoDecrypt;
+        private CheckBox checkBoxCrc;
+        private ToolTip tooltipBinary;
+        public Label labelSpeed;
+        private Label labelSpeedTitle;
+        private System.Windows.Forms.SaveFileDialog saveFileDialog;
+        public Label labelTransferred;
+        private Label labelImei;
+        private TextBox textBoxImei;
+        private ToolTip tooltipBinaryBox;
+        private TableLayoutPanel tableLayoutMain;
+        private FlowLayoutPanel flowLayoutDownloadButtons;
+        private TableLayoutPanel tableLayoutInfo;
+        private TableLayoutPanel tableLayoutDownload;
+        private TableLayoutPanel tableLayoutManual;
 
-    private void Form1_Load(object sender, EventArgs e)
-    {
-      Logger.form = this;
-      Web.form = this;
-      Crypto.form = this;
-      string[] models = Settings.ReadSetting<string[]>("Models");
-      if (models?.Length > 0)
-      {
-        this.model_textbox.Items.Clear();
-        this.model_textbox.Items.AddRange(models);
-      }
-      this.model_textbox.Text = Settings.ReadSetting<string>("Model");
-      string[] regions = Settings.ReadSetting<string[]>("Regions");
-      if (regions?.Length > 0)
-      {
-        this.region_textbox.Items.Clear();
-        this.region_textbox.Items.AddRange(regions);
-      }
-      this.region_textbox.Text = Settings.ReadSetting<string>("Region");
-      this.imei_textbox.Text = Settings.ReadSetting<string>("Imei");
-      this.pda_textbox.Text = Settings.ReadSetting<string>("PDAVer");
-      this.csc_textbox.Text = Settings.ReadSetting<string>("CSCVer");
-      this.phone_textbox.Text = Settings.ReadSetting<string>("PHONEVer");
-      if (Settings.ReadSetting<string>("AutoInfo").ToLower() == "true")
-        this.checkbox_auto.Checked = true;
-      else
-        this.checkbox_manual.Checked = true;
-      if (Settings.ReadSetting<string>("SaveFileDialog").ToLower() == "false")
-        this.SaveFileDialog = false;
-      if (Settings.ReadSetting<string>("BinaryNature").ToLower() == "true")
-        this.binary_checkbox.Checked = true;
-      if (Settings.ReadSetting<string>("CheckCRC").ToLower() == "false")
-        this.checkbox_crc.Checked = false;
-      if (Settings.ReadSetting<string>("AutoDecrypt").ToLower() == "false")
-        this.checkbox_autodecrypt.Checked = false;
-      this.tooltip_binary.SetToolTip((Control) this.binary_lbl, "Full firmware including PIT file");
-      this.tooltip_binary_box.SetToolTip((Control) this.binary_checkbox, "Full firmware including PIT file");
-      Logger.WriteLog("SamFirm v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion, false);
-      ServicePointManager.ServerCertificateValidationCallback = (RemoteCertificateValidationCallback) ((senderX, certificate, chain, sslPolicyErrors) => true);
-    }
-
-    private void Form1_Close(object sender, EventArgs e)
-    {
-      try
-      {
-        Settings.SetSetting("Model", this.model_textbox.Text.ToUpper());
-        Settings.SetSetting("Region", this.region_textbox.Text.ToUpper());
-        Settings.SetSetting("Imei", this.imei_textbox.Text.ToUpper());
-        Settings.SetSetting("PDAVer", this.pda_textbox.Text);
-        Settings.SetSetting("CSCVer", this.csc_textbox.Text);
-        Settings.SetSetting("PHONEVer", this.phone_textbox.Text);
-        Settings.SetSetting("AutoInfo", this.checkbox_auto.Checked.ToString());
-        Settings.SetSetting("SaveFileDialog", this.SaveFileDialog.ToString());
-        Settings.SetSetting("BinaryNature", this.binary_checkbox.Checked.ToString());
-        Settings.SetSetting("CheckCRC", this.checkbox_crc.Checked.ToString());
-        Settings.SetSetting("AutoDecrypt", this.checkbox_autodecrypt.Checked.ToString());
-      }
-      catch { }
-      this.PauseDownload = true;
-      Thread.Sleep(100);
-      Imports.FreeModule();
-      Logger.SaveLog();
-    }
-
-    private void download_button_Click(object sender, EventArgs e)
-    {
-      if (this.download_button.Text == "Pause")
-      {
-        Utility.TaskBarProgressState(true);
-        this.PauseDownload = true;
-        Utility.ReconnectDownload = false;
-        this.download_button.Text = "Download";
-      }
-      else
-      {
-        if (e != null && e.GetType() == typeof (Form1.DownloadEventArgs) && ((Form1.DownloadEventArgs) e).isReconnect && (this.download_button.Text == "Pause" || !Utility.ReconnectDownload))
-          return;
-        if (this.PauseDownload)
-          Logger.WriteLog("Download thread is still running. Please wait.", false);
-        else if (string.IsNullOrEmpty(this.file_textbox.Text))
+        public Form1()
         {
-          Logger.WriteLog("No file to download. Please check for update first.", false);
+            this.InitializeComponent();
         }
-        else
+
+        private void Form1_Load(object sender, EventArgs e)
         {
-          if (e.GetType() != typeof (Form1.DownloadEventArgs) || !((Form1.DownloadEventArgs) e).isReconnect)
-          {
-            if (this.SaveFileDialog)
+            Logger.form = this;
+            Web.form = this;
+            Crypto.form = this;
+            string[] models = Settings.ReadSetting<string[]>("Models");
+            if (models?.Length > 0)
             {
-              string str = Path.GetExtension(Path.GetFileNameWithoutExtension(this.FW.Filename)) + Path.GetExtension(this.FW.Filename);
-              this.saveFileDialog1.SupportMultiDottedExtensions = true;
-              this.saveFileDialog1.OverwritePrompt = false;
-              this.saveFileDialog1.FileName = this.FW.Filename.Replace(str, "");
-              this.saveFileDialog1.Filter = "Firmware|*" + str;
-              if (this.saveFileDialog1.ShowDialog() != DialogResult.OK)
-              {
-                Logger.WriteLog("Aborted.", false);
-                return;
-              }
-              if (!this.saveFileDialog1.FileName.EndsWith(str))
-                this.saveFileDialog1.FileName += str;
-              else
-                this.saveFileDialog1.FileName = this.saveFileDialog1.FileName.Replace(str + str, str);
-              Logger.WriteLog("Filename: " + this.saveFileDialog1.FileName, false);
-              this.destinationfile = this.saveFileDialog1.FileName;
-              if (System.IO.File.Exists(this.destinationfile))
-              {
-                switch (new customMessageBox("The destination file already exists.\r\nWould you like to append it (resume download)?", "Append", DialogResult.Yes, "Overwrite", DialogResult.No, "Cancel", DialogResult.Cancel, (Image) SystemIcons.Warning.ToBitmap()).ShowDialog())
-                {
-                  case DialogResult.Cancel:
-                    Logger.WriteLog("Aborted.", false);
-                    return;
-                  case DialogResult.No:
-                    System.IO.File.Delete(this.destinationfile);
-                    break;
-                }
-              }
+                this.comboBoxModel.Items.Clear();
+                this.comboBoxModel.Items.AddRange(models);
             }
+            this.comboBoxModel.Text = Settings.ReadSetting<string>("Model");
+            string[] regions = Settings.ReadSetting<string[]>("Regions");
+            if (regions?.Length > 0)
+            {
+                this.comboBoxRegion.Items.Clear();
+                this.comboBoxRegion.Items.AddRange(regions);
+            }
+            this.comboBoxRegion.Text = Settings.ReadSetting<string>("Region");
+            this.textBoxImei.Text = Settings.ReadSetting<string>("Imei");
+            this.textBoxPda.Text = Settings.ReadSetting<string>("PDAVer");
+            this.textBoxCsc.Text = Settings.ReadSetting<string>("CSCVer");
+            this.textBoxPhone.Text = Settings.ReadSetting<string>("PHONEVer");
+            if (Settings.ReadSetting<string>("AutoInfo").ToLower() == "true")
+                this.checkBoxAuto.Checked = true;
             else
-              this.destinationfile = this.FW.Filename;
-          }
-          Utility.TaskBarProgressState(false);
-          BackgroundWorker backgroundWorker = new BackgroundWorker();
-          backgroundWorker.DoWork += (DoWorkEventHandler) ((o, _e) =>
-          {
+                this.checkBoxManual.Checked = true;
+            if (Settings.ReadSetting<string>("SaveFileDialog").ToLower() == "false")
+                this.saveFileDialogEnabled = false;
+            if (Settings.ReadSetting<string>("BinaryNature").ToLower() == "true")
+                this.checkBoxBinary.Checked = true;
+            if (Settings.ReadSetting<string>("CheckCRC").ToLower() == "false")
+                this.checkBoxCrc.Checked = false;
+            if (Settings.ReadSetting<string>("AutoDecrypt").ToLower() == "false")
+                this.checkBoxAutoDecrypt.Checked = false;
+            this.tooltipBinary.SetToolTip(this.labelBinary, "Full firmware including PIT file");
+            this.tooltipBinaryBox.SetToolTip(this.checkBoxBinary, "Full firmware including PIT file");
+            Logger.WriteLog($"SamFirm v{FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion}", false);
+            ServicePointManager.ServerCertificateValidationCallback = (senderX, certificate, chain, sslPolicyErrors) => true;
+        }
+
+        private void Form1_Close(object sender, EventArgs e)
+        {
             try
             {
-              this.ControlsEnabled(false);
-              Utility.ReconnectDownload = false;
-              this.download_button.Invoke((Delegate)((Action)(() =>
-              {
-                this.download_button.Enabled = true;
-                this.download_button.Text = "Pause";
-              })));
-              if (this.FW.Filename == this.destinationfile)
-                Logger.WriteLog("Trying to download " + this.FW.Filename, false);
-              else
-                Logger.WriteLog("Trying to download " + this.FW.Filename + " to " + this.destinationfile, false);
-              Command.Download(this.FW.Path, this.FW.Filename, this.FW.Version, this.FW.Region, this.FW.Model_Type, this.destinationfile, this.FW.Size, true);
-              if (this.PauseDownload)
-              {
-                Logger.WriteLog("Download paused", false);
-                this.PauseDownload = false;
-                if (Utility.ReconnectDownload)
+                Settings.SetSetting("Model", this.comboBoxModel.Text.ToUpper());
+                Settings.SetSetting("Region", this.comboBoxRegion.Text.ToUpper());
+                Settings.SetSetting("Imei", this.textBoxImei.Text.ToUpper());
+                Settings.SetSetting("PDAVer", this.textBoxPda.Text);
+                Settings.SetSetting("CSCVer", this.textBoxCsc.Text);
+                Settings.SetSetting("PHONEVer", this.textBoxPhone.Text);
+                Settings.SetSetting("AutoInfo", this.checkBoxAuto.Checked.ToString());
+                Settings.SetSetting("SaveFileDialog", this.saveFileDialogEnabled.ToString());
+                Settings.SetSetting("BinaryNature", this.checkBoxBinary.Checked.ToString());
+                Settings.SetSetting("CheckCRC", this.checkBoxCrc.Checked.ToString());
+                Settings.SetSetting("AutoDecrypt", this.checkBoxAutoDecrypt.Checked.ToString());
+            }
+            catch { }
+            this.PauseDownload = true;
+            Thread.Sleep(100);
+            Imports.FreeModule();
+            Logger.SaveLog();
+        }
+
+        private void buttonDownload_Click(object sender, EventArgs e)
+        {
+            if (this.buttonDownload.Text == "Pause")
+            {
+                Utility.TaskBarProgressState(true);
+                this.PauseDownload = true;
+                Utility.ReconnectDownload = false;
+                this.buttonDownload.Text = "Download";
+            }
+            else
+            {
+                if (e is Form1.DownloadEventArgs downloadEventArgs && downloadEventArgs.isReconnect && (this.buttonDownload.Text == "Pause" || !Utility.ReconnectDownload))
+                    return;
+                if (this.PauseDownload)
+                    Logger.WriteLog("Download thread is still running. Please wait.", false);
+                else if (string.IsNullOrEmpty(this.textBoxFile.Text))
                 {
-                  Logger.WriteLog("Reconnecting...", false);
-                  Utility.Reconnect(new Action<object, EventArgs>(this.download_button_Click));
+                    Logger.WriteLog("No file to download. Please check for update first.", false);
                 }
-              }
-              else
-              {
-                Logger.WriteLog("Download finished", false);
-                if (this.checkbox_crc.Checked)
+                else
                 {
-                  if (this.FW.CRC == null)
-                  {
-                    Logger.WriteLog("Unable to check CRC. Value not set by Samsung", false);
-                  }
-                  else
-                  {
-                    Logger.WriteLog("\nChecking CRC32...", false);
-                    if (!Utility.CRCCheck(this.destinationfile, this.FW.CRC))
+                    if (!(e is Form1.DownloadEventArgs args) || !args.isReconnect)
                     {
-                      Logger.WriteLog("Error: CRC does not match. Please redownload the file.", false);
-                      System.IO.File.Delete(this.destinationfile);
-                      goto label_15;
+                        if (this.saveFileDialogEnabled)
+                        {
+                            string str = Path.GetExtension(Path.GetFileNameWithoutExtension(this.firmware.Filename)) + Path.GetExtension(this.firmware.Filename);
+                            this.saveFileDialog.SupportMultiDottedExtensions = true;
+                            this.saveFileDialog.OverwritePrompt = false;
+                            this.saveFileDialog.FileName = this.firmware.Filename.Replace(str, "");
+                            this.saveFileDialog.Filter = "Firmware|*" + str;
+                            if (this.saveFileDialog.ShowDialog() != DialogResult.OK)
+                            {
+                                Logger.WriteLog("Aborted.", false);
+                                return;
+                            }
+                            if (!this.saveFileDialog.FileName.EndsWith(str))
+                                this.saveFileDialog.FileName += str;
+                            else
+                                this.saveFileDialog.FileName = this.saveFileDialog.FileName.Replace(str + str, str);
+                            Logger.WriteLog($"Filename: {this.saveFileDialog.FileName}", false);
+                            this.destinationFile = this.saveFileDialog.FileName;
+                            if (File.Exists(this.destinationFile))
+                            {
+                                switch (new customMessageBox("The destination file already exists.\r\nWould you like to append it (resume download)?", "Append", DialogResult.Yes, "Overwrite", DialogResult.No, "Cancel", DialogResult.Cancel, SystemIcons.Warning.ToBitmap()).ShowDialog())
+                                {
+                                    case DialogResult.Cancel:
+                                        Logger.WriteLog("Aborted.", false);
+                                        return;
+                                    case DialogResult.No:
+                                        File.Delete(this.destinationFile);
+                                        break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            this.destinationFile = this.firmware.Filename;
+                        }
                     }
-                    else
-                      Logger.WriteLog("Success: CRC match!", false);
-                  }
+                    Utility.TaskBarProgressState(false);
+                    BackgroundWorker backgroundWorker = new BackgroundWorker();
+                    backgroundWorker.DoWork += (o, _e) =>
+                    {
+                        try
+                        {
+                            this.ControlsEnabled(false);
+                            Utility.ReconnectDownload = false;
+                            this.buttonDownload.Invoke((Action)(() =>
+                            {
+                                this.buttonDownload.Enabled = true;
+                                this.buttonDownload.Text = "Pause";
+                            }));
+                            if (this.firmware.Filename == this.destinationFile)
+                                Logger.WriteLog($"Trying to download {this.firmware.Filename}", false);
+                            else
+                                Logger.WriteLog($"Trying to download {this.firmware.Filename} to {this.destinationFile}", false);
+                            Command.Download(this.firmware.Path, this.firmware.Filename, this.firmware.Version, this.firmware.Region, this.firmware.Model_Type, this.destinationFile, this.firmware.Size, true);
+                            if (this.PauseDownload)
+                            {
+                                Logger.WriteLog("Download paused", false);
+                                this.PauseDownload = false;
+                                if (Utility.ReconnectDownload)
+                                {
+                                    Logger.WriteLog("Reconnecting...", false);
+                                    Utility.Reconnect(this.buttonDownload_Click);
+                                }
+                            }
+                            else
+                            {
+                                Logger.WriteLog("Download finished", false);
+                                if (this.checkBoxCrc.Checked)
+                                {
+                                    if (this.firmware.CRC == null)
+                                    {
+                                        Logger.WriteLog("Unable to check CRC. Value not set by Samsung", false);
+                                    }
+                                    else
+                                    {
+                                        Logger.WriteLog("\nChecking CRC32...", false);
+                                        if (!Utility.CRCCheck(this.destinationFile, this.firmware.CRC))
+                                        {
+                                            Logger.WriteLog("Error: CRC does not match. Please redownload the file.", false);
+                                            File.Delete(this.destinationFile);
+                                            if (!Utility.ReconnectDownload)
+                                                this.ControlsEnabled(true);
+                                            this.buttonDownload.Invoke((Action)(() => this.buttonDownload.Text = "Download"));
+                                            return;
+                                        }
+                                        else
+                                            Logger.WriteLog("Success: CRC match!", false);
+                                    }
+                                }
+                                this.buttonDecrypt.Invoke((Action)(() => this.buttonDecrypt.Enabled = true));
+                                if (this.checkBoxAutoDecrypt.Checked)
+                                    this.buttonDecrypt_Click(o, null);
+                            }
+                            if (!Utility.ReconnectDownload)
+                                this.ControlsEnabled(true);
+                            this.buttonDownload.Invoke((Action)(() => this.buttonDownload.Text = "Download"));
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.WriteLog(ex.Message, false);
+                            Logger.WriteLog(ex.ToString(), false);
+                        }
+                    };
+                    backgroundWorker.RunWorkerAsync();
                 }
-                this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = true)));
-                if (this.checkbox_autodecrypt.Checked)
-                  this.decrypt_button_Click(o, (EventArgs) null);
-              }
-label_15:
-              if (!Utility.ReconnectDownload)
-                this.ControlsEnabled(true);
-              this.download_button.Invoke((Delegate)((Action)(() => this.download_button.Text = "Download")));
             }
-            catch (Exception ex)
-            {
-              Logger.WriteLog(ex.Message, false);
-              Logger.WriteLog(ex.ToString(), false);
-            }
-          });
-          backgroundWorker.RunWorkerAsync();
         }
-      }
-    }
 
-    private void update_button_Click(object sender, EventArgs e)
-    {
-      if (string.IsNullOrEmpty(this.model_textbox.Text))
-        Logger.WriteLog("Error: Please specify a model", false);
-      else if (string.IsNullOrEmpty(this.region_textbox.Text))
-        Logger.WriteLog("Error: Please specify a region", false);
-      else if (string.IsNullOrEmpty(this.imei_textbox.Text))
-        Logger.WriteLog("Error: Please specify an Imei or Serial number", false);
-      else if (this.checkbox_manual.Checked && (string.IsNullOrEmpty(this.imei_textbox.Text) || string.IsNullOrEmpty(this.pda_textbox.Text) || string.IsNullOrEmpty(this.csc_textbox.Text) || string.IsNullOrEmpty(this.phone_textbox.Text)))
-      {
-        Logger.WriteLog("Error: Please specify PDA, CSC and Phone version and Imei/Serial or use Auto Method", false);
-      }
-      else
-      {
-        string model = this.model_textbox.Text.ToUpper();
-        string region = this.region_textbox.Text.ToUpper();
-        string imei = this.imei_textbox.Text.ToUpper();
-        BackgroundWorker backgroundWorker = new BackgroundWorker();
-        backgroundWorker.DoWork += (DoWorkEventHandler) ((o, _e) =>
+        private void buttonUpdate_Click(object sender, EventArgs e)
         {
-          try
-          {
-            this.SetProgressBar(0, 0);
-            this.ControlsEnabled(false);
-            Utility.ReconnectDownload = false;
-            this.FW = !this.checkbox_auto.Checked ? Command.UpdateCheck(model, region, imei, this.pda_textbox.Text, this.csc_textbox.Text, this.phone_textbox.Text, this.pda_textbox.Text, this.binary_checkbox.Checked, false) : Command.UpdateCheckAuto(model, region, imei, this.binary_checkbox.Checked);
-            if (!string.IsNullOrEmpty(this.FW.Filename))
+            if (string.IsNullOrEmpty(this.comboBoxModel.Text))
+                Logger.WriteLog("Error: Please specify a model", false);
+            else if (string.IsNullOrEmpty(this.comboBoxRegion.Text))
+                Logger.WriteLog("Error: Please specify a region", false);
+            else if (string.IsNullOrEmpty(this.textBoxImei.Text))
+                Logger.WriteLog("Error: Please specify an Imei or Serial number", false);
+            else if (this.checkBoxManual.Checked && (string.IsNullOrEmpty(this.textBoxImei.Text) || string.IsNullOrEmpty(this.textBoxPda.Text) || string.IsNullOrEmpty(this.textBoxCsc.Text) || string.IsNullOrEmpty(this.textBoxPhone.Text)))
             {
-              this.file_textbox.Invoke((Delegate)((Action)(() => this.file_textbox.Text = this.FW.Filename)));
-              this.version_textbox.Invoke((Delegate)((Action)(() => this.version_textbox.Text = this.FW.Version)));
-              this.size_textbox.Invoke((Delegate)((Action)(() => this.size_textbox.Text = (long.Parse(this.FW.Size) / 1024L / 1024L).ToString() + " MB")));
-              this.model_textbox.Invoke((Action)(() =>
-              {
-                var items = model_textbox.Items.OfType<string>().ToList();
-                items.Add(model);
-                Settings.SetSetting("Models", items.Distinct().OrderBy(s => s));
-                items = region_textbox.Items.OfType<string>().ToList();
-                items.Add(region);
-                Settings.SetSetting("Regions", items.Distinct().OrderBy(s => s));
-              }));
+                Logger.WriteLog("Error: Please specify PDA, CSC and Phone version and Imei/Serial or use Auto Method", false);
             }
             else
             {
-              this.file_textbox.Invoke((Delegate)((Action)(() => this.file_textbox.Text = string.Empty)));
-              this.version_textbox.Invoke((Delegate)((Action)(() => this.version_textbox.Text = string.Empty)));
-              this.size_textbox.Invoke((Delegate)((Action)(() => this.size_textbox.Text = string.Empty)));
+                string model = this.comboBoxModel.Text.ToUpper();
+                string region = this.comboBoxRegion.Text.ToUpper();
+                string imei = this.textBoxImei.Text.ToUpper();
+                BackgroundWorker backgroundWorker = new BackgroundWorker();
+                backgroundWorker.DoWork += (o, _e) =>
+                {
+                    try
+                    {
+                        this.SetProgressBar(0, 0);
+                        this.ControlsEnabled(false);
+                        Utility.ReconnectDownload = false;
+                        this.firmware = !this.checkBoxAuto.Checked ? Command.UpdateCheck(model, region, imei, this.textBoxPda.Text, this.textBoxCsc.Text, this.textBoxPhone.Text, this.textBoxPda.Text, this.checkBoxBinary.Checked, false) : Command.UpdateCheckAuto(model, region, imei, this.checkBoxBinary.Checked);
+                        if (!string.IsNullOrEmpty(this.firmware.Filename))
+                        {
+                            this.textBoxFile.Invoke((Action)(() => this.textBoxFile.Text = this.firmware.Filename));
+                            this.textBoxVersion.Invoke((Action)(() => this.textBoxVersion.Text = this.firmware.Version));
+                            this.textBoxSize.Invoke((Action)(() => this.textBoxSize.Text = $"{(long.Parse(this.firmware.Size) / 1024L / 1024L)} MB"));
+                            this.comboBoxModel.Invoke((Action)(() =>
+                            {
+                                var items = comboBoxModel.Items.OfType<string>().ToList();
+                                items.Add(model);
+                                Settings.SetSetting("Models", items.Distinct().OrderBy(s => s));
+                                items = comboBoxRegion.Items.OfType<string>().ToList();
+                                items.Add(region);
+                                Settings.SetSetting("Regions", items.Distinct().OrderBy(s => s));
+                            }));
+                        }
+                        else
+                        {
+                            this.textBoxFile.Invoke((Action)(() => this.textBoxFile.Text = string.Empty));
+                            this.textBoxVersion.Invoke((Action)(() => this.textBoxVersion.Text = string.Empty));
+                            this.textBoxSize.Invoke((Action)(() => this.textBoxSize.Text = string.Empty));
+                        }
+                        this.ControlsEnabled(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.WriteLog(ex.Message, false);
+                        Logger.WriteLog(ex.ToString(), false);
+                    }
+                };
+                backgroundWorker.RunWorkerAsync();
             }
-            this.ControlsEnabled(true);
-          }
-          catch (Exception ex)
-          {
-            Logger.WriteLog(ex.Message, false);
-            Logger.WriteLog(ex.ToString(), false);
-          }
-        });
-        backgroundWorker.RunWorkerAsync();
-      }
-    }
-
-    public void SetProgressBar(int Progress, long bytesTransferred)
-    {
-      if (Progress > 100)
-        Progress = 100;
-      this.progressBar.Invoke((Delegate)((Action)(() =>
-      {
-        this.progressBar.Value = Progress;
-        if (bytesTransferred > 0)
-        {
-          this.lbl_transferred.Text = $"{bytesTransferred / 1024.0 / 1024.0:0.00} MB";
         }
-        else 
-        {
-          this.lbl_transferred.Text = "";
-        }
-        try
-        {
-          TaskbarManager.Instance.SetProgressValue(Progress, 100);
-        }
-        catch (Exception ex)
-        {
-        }
-      })));
-    }
 
-    private void ControlsEnabled(bool Enabled)
-    {
-      this.update_button.Invoke((Delegate)((Action)(() => this.update_button.Enabled = Enabled)));
-      this.download_button.Invoke((Delegate)((Action)(() => this.download_button.Enabled = Enabled)));
-      this.binary_checkbox.Invoke((Delegate)((Action)(() => this.binary_checkbox.Enabled = Enabled)));
-      this.model_textbox.Invoke((Delegate)((Action)(() => this.model_textbox.Enabled = Enabled)));
-      this.region_textbox.Invoke((Delegate)((Action)(() => this.region_textbox.Enabled = Enabled)));
-      this.checkbox_auto.Invoke((Delegate)((Action)(() => this.checkbox_auto.Enabled = Enabled)));
-      this.checkbox_manual.Invoke((Delegate)((Action)(() => this.checkbox_manual.Enabled = Enabled)));
-      this.checkbox_manual.Invoke((Delegate)((Action)(() =>
-      {
-        if (!this.checkbox_manual.Checked)
-          return;
-        this.pda_textbox.Enabled = Enabled;
-        this.csc_textbox.Enabled = Enabled;
-        this.phone_textbox.Enabled = Enabled;
-      })));
-      this.checkbox_autodecrypt.Invoke((Delegate)((Action)(() => this.checkbox_autodecrypt.Enabled = Enabled)));
-      this.checkbox_crc.Invoke((Delegate)((Action)(() => this.checkbox_crc.Enabled = Enabled)));
-    }
-
-    private void decrypt_button_Click(object sender, EventArgs e)
-    {
-      if (!System.IO.File.Exists(this.destinationfile))
-      {
-        Logger.WriteLog("Error: File " + this.destinationfile + " does not exist", false);
-      }
-      else
-      {
-        string pda = this.pda_textbox.Text;
-        string csc = this.csc_textbox.Text;
-        string phone = this.phone_textbox.Text;
-
-        BackgroundWorker backgroundWorker = new BackgroundWorker();
-        backgroundWorker.DoWork += (DoWorkEventHandler) ((o, _e) =>
+        public void SetProgressBar(int Progress, long bytesTransferred)
         {
-          Thread.Sleep(100);
-          Logger.WriteLog("\nDecrypting and unzipping firmware...", false);
-          this.ControlsEnabled(false);
-          this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = false)));
-          if (this.destinationfile.EndsWith(".enc2"))
-            Crypto.SetDecryptKey(this.FW.Region, this.FW.Model, this.FW.Version);
-          else if (this.destinationfile.EndsWith(".enc4"))
-          {
-            if (this.FW.BinaryNature == 1)
-              Crypto.SetDecryptKey(this.FW.Version, this.FW.LogicValueFactory);
+            if (Progress > 100)
+                Progress = 100;
+            this.progressBar.Invoke((Action)(() =>
+            {
+                this.progressBar.Value = Progress;
+                if (bytesTransferred > 0)
+                {
+                    this.labelTransferred.Text = $"{bytesTransferred / 1024.0 / 1024.0:0.00} MB";
+                }
+                else
+                {
+                    this.labelTransferred.Text = "";
+                }
+                try
+                {
+                    TaskbarManager.Instance.SetProgressValue(Progress, 100);
+                }
+                catch (Exception)
+                {
+                }
+            }));
+        }
+
+        private void ControlsEnabled(bool enabled)
+        {
+            this.buttonUpdate.Invoke((Action)(() => this.buttonUpdate.Enabled = enabled));
+            this.buttonDownload.Invoke((Action)(() => this.buttonDownload.Enabled = enabled));
+            this.checkBoxBinary.Invoke((Action)(() => this.checkBoxBinary.Enabled = enabled));
+            this.comboBoxModel.Invoke((Action)(() => this.comboBoxModel.Enabled = enabled));
+            this.comboBoxRegion.Invoke((Action)(() => this.comboBoxRegion.Enabled = enabled));
+            this.checkBoxAuto.Invoke((Action)(() => this.checkBoxAuto.Enabled = enabled));
+            this.checkBoxManual.Invoke((Action)(() => this.checkBoxManual.Enabled = enabled));
+            this.checkBoxManual.Invoke((Action)(() =>
+            {
+                if (!this.checkBoxManual.Checked)
+                    return;
+                this.textBoxPda.Enabled = enabled;
+                this.textBoxCsc.Enabled = enabled;
+                this.textBoxPhone.Enabled = enabled;
+            }));
+            this.checkBoxAutoDecrypt.Invoke((Action)(() => this.checkBoxAutoDecrypt.Enabled = enabled));
+            this.checkBoxCrc.Invoke((Action)(() => this.checkBoxCrc.Enabled = enabled));
+        }
+
+        private void buttonDecrypt_Click(object sender, EventArgs e)
+        {
+            if (!File.Exists(this.destinationFile))
+            {
+                Logger.WriteLog($"Error: File {this.destinationFile} does not exist", false);
+            }
             else
-              Crypto.SetDecryptKey(this.FW.Version, this.FW.LogicValueHome);
-          }
-          string outputDirectory = Path.Combine(Path.GetDirectoryName(this.destinationfile), Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(this.destinationfile)));
-          if (Crypto.DecryptAndUnzip(this.destinationfile, outputDirectory, true) == 0)
-          {
-            CmdLine.SaveMeta(FW, Path.Combine(outputDirectory, "FirmwareInfo.txt"));
-//            File.WriteAllText(Path.Combine(outputDirectory, "FirmwareInfo,txt"), $@"
-//Model: {FW.Model}
-//Type: {FW.Model_Type}
-//Date: {FW.LastModified}
-//DisplayName: {FW.DisplayName}
-//OS: {FW.OS}
-//Region: {FW.Region}
-//Version: {FW.Version}
-//PDA: {pda}
-//CSC: {csc}
-//Phone: {phone}
-//");
-            System.IO.File.Delete(this.destinationfile);
-          }
-          Logger.WriteLog("Decryption finished", false);
-          this.ControlsEnabled(true);
-        });
-        backgroundWorker.RunWorkerAsync();
-      }
-    }
+            {
+                BackgroundWorker backgroundWorker = new BackgroundWorker();
+                backgroundWorker.DoWork += (o, _e) =>
+                {
+                    Thread.Sleep(100);
+                    Logger.WriteLog("\nDecrypting and unzipping firmware...", false);
+                    this.ControlsEnabled(false);
+                    this.buttonDecrypt.Invoke((Action)(() => this.buttonDecrypt.Enabled = false));
+                    if (this.destinationFile.EndsWith(".enc2"))
+                    {
+                        Crypto.SetDecryptKey(this.firmware.Region, this.firmware.Model, this.firmware.Version);
+                    }
+                    else if (this.destinationFile.EndsWith(".enc4"))
+                    {
+                        if (this.firmware.BinaryNature == 1)
+                            Crypto.SetDecryptKey(this.firmware.Version, this.firmware.LogicValueFactory);
+                        else
+                            Crypto.SetDecryptKey(this.firmware.Version, this.firmware.LogicValueHome);
+                    }
+                    string outputDirectory = Path.Combine(Path.GetDirectoryName(this.destinationFile), Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(this.destinationFile)));
+                    if (Crypto.DecryptAndUnzip(this.destinationFile, outputDirectory, true) == 0)
+                    {
+                        CmdLine.SaveMeta(this.firmware, Path.Combine(outputDirectory, "FirmwareInfo.txt"));
+                        File.Delete(this.destinationFile);
+                    }
+                    Logger.WriteLog("Decryption finished", false);
+                    this.ControlsEnabled(true);
+                };
+                backgroundWorker.RunWorkerAsync();
+            }
+        }
 
-    private void checkbox_manual_CheckedChanged(object sender, EventArgs e)
-    {
-      if (!this.checkbox_auto.Checked && !this.checkbox_manual.Checked)
-      {
-        this.checkbox_manual.Checked = true;
-      }
-      else
-      {
-        this.checkbox_auto.Checked = !this.checkbox_manual.Checked;
-        this.pda_textbox.Enabled = this.checkbox_manual.Checked;
-        this.csc_textbox.Enabled = this.checkbox_manual.Checked;
-        this.phone_textbox.Enabled = this.checkbox_manual.Checked;
-      }
-    }
+        private void checkBoxManual_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!this.checkBoxAuto.Checked && !this.checkBoxManual.Checked)
+            {
+                this.checkBoxManual.Checked = true;
+            }
+            else
+            {
+                this.checkBoxAuto.Checked = !this.checkBoxManual.Checked;
+                this.textBoxPda.Enabled = this.checkBoxManual.Checked;
+                this.textBoxCsc.Enabled = this.checkBoxManual.Checked;
+                this.textBoxPhone.Enabled = this.checkBoxManual.Checked;
+            }
+        }
 
-    private void checkbox_auto_CheckedChanged(object sender, EventArgs e)
-    {
-      if (!this.checkbox_manual.Checked && !this.checkbox_auto.Checked)
-      {
-        this.checkbox_auto.Checked = true;
-      }
-      else
-      {
-        this.checkbox_manual.Checked = !this.checkbox_auto.Checked;
-        this.pda_textbox.Enabled = !this.checkbox_auto.Checked;
-        this.csc_textbox.Enabled = !this.checkbox_auto.Checked;
-        this.phone_textbox.Enabled = !this.checkbox_auto.Checked;
-      }
-    }
+        private void checkBoxAuto_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!this.checkBoxManual.Checked && !this.checkBoxAuto.Checked)
+            {
+                this.checkBoxAuto.Checked = true;
+            }
+            else
+            {
+                this.checkBoxManual.Checked = !this.checkBoxAuto.Checked;
+                this.textBoxPda.Enabled = !this.checkBoxAuto.Checked;
+                this.textBoxCsc.Enabled = !this.checkBoxAuto.Checked;
+                this.textBoxPhone.Enabled = !this.checkBoxAuto.Checked;
+            }
+        }
 
-    protected override void Dispose(bool disposing)
-    {
-      if (disposing && this.components != null)
-        this.components.Dispose();
-      base.Dispose(disposing);
-    }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && this.components != null)
+                this.components.Dispose();
+            base.Dispose(disposing);
+        }
 
-    private void InitializeComponent()
-    {
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            this.model_textbox = new System.Windows.Forms.ComboBox();
-            this.model_lbl = new System.Windows.Forms.Label();
-            this.download_button = new System.Windows.Forms.Button();
-            this.log_textbox = new System.Windows.Forms.RichTextBox();
-            this.region_lbl = new System.Windows.Forms.Label();
-            this.region_textbox = new System.Windows.Forms.ComboBox();
-            this.pda_lbl = new System.Windows.Forms.Label();
-            this.pda_textbox = new System.Windows.Forms.TextBox();
-            this.csc_lbl = new System.Windows.Forms.Label();
-            this.csc_textbox = new System.Windows.Forms.TextBox();
-            this.update_button = new System.Windows.Forms.Button();
-            this.phone_lbl = new System.Windows.Forms.Label();
-            this.phone_textbox = new System.Windows.Forms.TextBox();
-            this.file_lbl = new System.Windows.Forms.Label();
-            this.file_textbox = new System.Windows.Forms.TextBox();
-            this.version_lbl = new System.Windows.Forms.Label();
-            this.version_textbox = new System.Windows.Forms.TextBox();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.imei_lbl = new System.Windows.Forms.Label();
-            this.imei_textbox = new System.Windows.Forms.TextBox();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.checkbox_manual = new System.Windows.Forms.CheckBox();
-            this.checkbox_auto = new System.Windows.Forms.CheckBox();
-            this.binary_checkbox = new System.Windows.Forms.CheckBox();
-            this.binary_lbl = new System.Windows.Forms.Label();
+            this.comboBoxModel = new System.Windows.Forms.ComboBox();
+            this.labelModel = new System.Windows.Forms.Label();
+            this.buttonDownload = new System.Windows.Forms.Button();
+            this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
+            this.labelRegion = new System.Windows.Forms.Label();
+            this.comboBoxRegion = new System.Windows.Forms.ComboBox();
+            this.labelPda = new System.Windows.Forms.Label();
+            this.textBoxPda = new System.Windows.Forms.TextBox();
+            this.labelCsc = new System.Windows.Forms.Label();
+            this.textBoxCsc = new System.Windows.Forms.TextBox();
+            this.buttonUpdate = new System.Windows.Forms.Button();
+            this.labelPhone = new System.Windows.Forms.Label();
+            this.textBoxPhone = new System.Windows.Forms.TextBox();
+            this.labelFile = new System.Windows.Forms.Label();
+            this.textBoxFile = new System.Windows.Forms.TextBox();
+            this.labelVersion = new System.Windows.Forms.Label();
+            this.textBoxVersion = new System.Windows.Forms.TextBox();
+            this.groupBoxInfo = new System.Windows.Forms.GroupBox();
+            this.labelImei = new System.Windows.Forms.Label();
+            this.textBoxImei = new System.Windows.Forms.TextBox();
+            this.groupBoxManual = new System.Windows.Forms.GroupBox();
+            this.checkBoxManual = new System.Windows.Forms.CheckBox();
+            this.checkBoxAuto = new System.Windows.Forms.CheckBox();
+            this.checkBoxBinary = new System.Windows.Forms.CheckBox();
+            this.labelBinary = new System.Windows.Forms.Label();
             this.progressBar = new System.Windows.Forms.ProgressBar();
-            this.decrypt_button = new System.Windows.Forms.Button();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.lbl_transferred = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.lbl_speed = new System.Windows.Forms.Label();
-            this.checkbox_autodecrypt = new System.Windows.Forms.CheckBox();
-            this.checkbox_crc = new System.Windows.Forms.CheckBox();
-            this.size_textbox = new System.Windows.Forms.TextBox();
-            this.size_lbl = new System.Windows.Forms.Label();
-            this.tooltip_binary = new System.Windows.Forms.ToolTip(this.components);
-            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.tooltip_binary_box = new System.Windows.Forms.ToolTip(this.components);
-            this.groupBox1.SuspendLayout();
-            this.groupBox3.SuspendLayout();
-            this.groupBox2.SuspendLayout();
+            this.buttonDecrypt = new System.Windows.Forms.Button();
+            this.groupBoxDownload = new System.Windows.Forms.GroupBox();
+            this.labelTransferred = new System.Windows.Forms.Label();
+            this.labelSpeedTitle = new System.Windows.Forms.Label();
+            this.labelSpeed = new System.Windows.Forms.Label();
+            this.checkBoxAutoDecrypt = new System.Windows.Forms.CheckBox();
+            this.checkBoxCrc = new System.Windows.Forms.CheckBox();
+            this.textBoxSize = new System.Windows.Forms.TextBox();
+            this.labelSize = new System.Windows.Forms.Label();
+            this.tooltipBinary = new System.Windows.Forms.ToolTip(this.components);
+            this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.tooltipBinaryBox = new System.Windows.Forms.ToolTip(this.components);
+            this.tableLayoutMain = new System.Windows.Forms.TableLayoutPanel();
+            this.tableLayoutInfo = new System.Windows.Forms.TableLayoutPanel();
+            this.tableLayoutDownload = new System.Windows.Forms.TableLayoutPanel();
+            this.flowLayoutDownloadButtons = new System.Windows.Forms.FlowLayoutPanel();
+            this.tableLayoutManual = new System.Windows.Forms.TableLayoutPanel();
+            this.groupBoxInfo.SuspendLayout();
+            this.groupBoxManual.SuspendLayout();
+            this.groupBoxDownload.SuspendLayout();
+            this.tableLayoutMain.SuspendLayout();
+            this.tableLayoutInfo.SuspendLayout();
+            this.tableLayoutDownload.SuspendLayout();
+            this.flowLayoutDownloadButtons.SuspendLayout();
+            this.tableLayoutManual.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // model_textbox
-            // 
-            this.model_textbox.Items.AddRange(new object[] {
+            //
+            // tableLayoutMain
+            //
+            this.tableLayoutMain.ColumnCount = 2;
+            this.tableLayoutMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 45F));
+            this.tableLayoutMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 55F));
+            this.tableLayoutMain.Controls.Add(this.groupBoxInfo, 0, 0);
+            this.tableLayoutMain.Controls.Add(this.groupBoxDownload, 1, 0);
+            this.tableLayoutMain.Controls.Add(this.richTextBoxLog, 0, 1);
+            this.tableLayoutMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutMain.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutMain.Name = "tableLayoutMain";
+            this.tableLayoutMain.Padding = new System.Windows.Forms.Padding(10);
+            this.tableLayoutMain.RowCount = 2;
+            this.tableLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 350F));
+            this.tableLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutMain.Size = new System.Drawing.Size(900, 600);
+            this.tableLayoutMain.TabIndex = 0;
+            //
+            // groupBoxInfo
+            //
+            this.groupBoxInfo.Controls.Add(this.tableLayoutInfo);
+            this.groupBoxInfo.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.groupBoxInfo.Location = new System.Drawing.Point(13, 13);
+            this.groupBoxInfo.Name = "groupBoxInfo";
+            this.groupBoxInfo.Size = new System.Drawing.Size(390, 344);
+            this.groupBoxInfo.TabIndex = 0;
+            this.groupBoxInfo.TabStop = false;
+            this.groupBoxInfo.Text = "Firmware Info";
+            //
+            // tableLayoutInfo
+            //
+            this.tableLayoutInfo.ColumnCount = 2;
+            this.tableLayoutInfo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 100F));
+            this.tableLayoutInfo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutInfo.Controls.Add(this.labelModel, 0, 0);
+            this.tableLayoutInfo.Controls.Add(this.comboBoxModel, 1, 0);
+            this.tableLayoutInfo.Controls.Add(this.labelRegion, 0, 1);
+            this.tableLayoutInfo.Controls.Add(this.comboBoxRegion, 1, 1);
+            this.tableLayoutInfo.Controls.Add(this.labelImei, 0, 2);
+            this.tableLayoutInfo.Controls.Add(this.textBoxImei, 1, 2);
+            this.tableLayoutInfo.Controls.Add(this.checkBoxAuto, 0, 3);
+            this.tableLayoutInfo.Controls.Add(this.checkBoxManual, 1, 3);
+            this.tableLayoutInfo.Controls.Add(this.groupBoxManual, 0, 4);
+            this.tableLayoutInfo.Controls.Add(this.labelBinary, 0, 5);
+            this.tableLayoutInfo.Controls.Add(this.checkBoxBinary, 1, 5);
+            this.tableLayoutInfo.Controls.Add(this.buttonUpdate, 1, 6);
+            this.tableLayoutInfo.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.tableLayoutInfo.Location = new System.Drawing.Point(3, 19);
+            this.tableLayoutInfo.Name = "tableLayoutInfo";
+            this.tableLayoutInfo.RowCount = 7;
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 110F));
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutInfo.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableLayoutInfo.Size = new System.Drawing.Size(384, 322);
+            this.tableLayoutInfo.TabIndex = 0;
+            //
+            // labelModel
+            //
+            this.labelModel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelModel.AutoSize = true;
+            this.labelModel.Location = new System.Drawing.Point(3, 7);
+            this.labelModel.Name = "labelModel";
+            this.labelModel.Size = new System.Drawing.Size(41, 15);
+            this.labelModel.TabIndex = 0;
+            this.labelModel.Text = "Model";
+            //
+            // comboBoxModel
+            //
+            this.comboBoxModel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.comboBoxModel.FormattingEnabled = true;
+            this.comboBoxModel.Items.AddRange(new object[] {
             "SM-G960F",
             "SM-G973F",
             "SM-S901B",
@@ -510,433 +589,446 @@ label_15:
             "SM-T395",
             "SM-T545",
             "SM-T575"});
-            this.model_textbox.Location = new System.Drawing.Point(113, 27);
-            this.model_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.model_textbox.Name = "model_textbox";
-            this.model_textbox.Size = new System.Drawing.Size(197, 24);
-            this.model_textbox.TabIndex = 0;
-            // 
-            // model_lbl
-            // 
-            this.model_lbl.AutoSize = true;
-            this.model_lbl.Location = new System.Drawing.Point(11, 31);
-            this.model_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.model_lbl.Name = "model_lbl";
-            this.model_lbl.Size = new System.Drawing.Size(45, 16);
-            this.model_lbl.TabIndex = 1;
-            this.model_lbl.Text = "Model";
-            // 
-            // download_button
-            // 
-            this.download_button.Location = new System.Drawing.Point(99, 144);
-            this.download_button.Margin = new System.Windows.Forms.Padding(0);
-            this.download_button.Name = "download_button";
-            this.download_button.Size = new System.Drawing.Size(125, 28);
-            this.download_button.TabIndex = 13;
-            this.download_button.Text = "Download";
-            this.download_button.UseVisualStyleBackColor = true;
-            this.download_button.Click += new System.EventHandler(this.download_button_Click);
-            // 
-            // log_textbox
-            // 
-            this.log_textbox.Location = new System.Drawing.Point(16, 371);
-            this.log_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.log_textbox.Name = "log_textbox";
-            this.log_textbox.ReadOnly = true;
-            this.log_textbox.Size = new System.Drawing.Size(851, 169);
-            this.log_textbox.TabIndex = 3;
-            this.log_textbox.TabStop = false;
-            this.log_textbox.Text = "";
-            // 
-            // region_lbl
-            // 
-            this.region_lbl.AutoSize = true;
-            this.region_lbl.Location = new System.Drawing.Point(11, 63);
-            this.region_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.region_lbl.Name = "region_lbl";
-            this.region_lbl.Size = new System.Drawing.Size(51, 16);
-            this.region_lbl.TabIndex = 5;
-            this.region_lbl.Text = "Region";
-            // 
-            // region_textbox
-            // 
-            this.region_textbox.Items.AddRange(new object[] {
+            this.comboBoxModel.Location = new System.Drawing.Point(103, 3);
+            this.comboBoxModel.Name = "comboBoxModel";
+            this.comboBoxModel.Size = new System.Drawing.Size(278, 23);
+            this.comboBoxModel.TabIndex = 0;
+            //
+            // labelRegion
+            //
+            this.labelRegion.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelRegion.AutoSize = true;
+            this.labelRegion.Location = new System.Drawing.Point(3, 37);
+            this.labelRegion.Name = "labelRegion";
+            this.labelRegion.Size = new System.Drawing.Size(44, 15);
+            this.labelRegion.TabIndex = 2;
+            this.labelRegion.Text = "Region";
+            //
+            // comboBoxRegion
+            //
+            this.comboBoxRegion.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.comboBoxRegion.FormattingEnabled = true;
+            this.comboBoxRegion.Items.AddRange(new object[] {
             "NEE",
             "EUX"});
-            this.region_textbox.Location = new System.Drawing.Point(113, 59);
-            this.region_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.region_textbox.Name = "region_textbox";
-            this.region_textbox.Size = new System.Drawing.Size(197, 24);
-            this.region_textbox.TabIndex = 1;
-            // 
-            // pda_lbl
-            // 
-            this.pda_lbl.AutoSize = true;
-            this.pda_lbl.Location = new System.Drawing.Point(13, 18);
-            this.pda_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.pda_lbl.Name = "pda_lbl";
-            this.pda_lbl.Size = new System.Drawing.Size(35, 16);
-            this.pda_lbl.TabIndex = 7;
-            this.pda_lbl.Text = "PDA";
-            // 
-            // pda_textbox
-            // 
-            this.pda_textbox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
-            this.pda_textbox.Location = new System.Drawing.Point(105, 15);
-            this.pda_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.pda_textbox.Name = "pda_textbox";
-            this.pda_textbox.Size = new System.Drawing.Size(197, 22);
-            this.pda_textbox.TabIndex = 4;
-            // 
-            // csc_lbl
-            // 
-            this.csc_lbl.AutoSize = true;
-            this.csc_lbl.Location = new System.Drawing.Point(13, 50);
-            this.csc_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.csc_lbl.Name = "csc_lbl";
-            this.csc_lbl.Size = new System.Drawing.Size(34, 16);
-            this.csc_lbl.TabIndex = 9;
-            this.csc_lbl.Text = "CSC";
-            // 
-            // csc_textbox
-            // 
-            this.csc_textbox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
-            this.csc_textbox.Location = new System.Drawing.Point(105, 47);
-            this.csc_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.csc_textbox.Name = "csc_textbox";
-            this.csc_textbox.Size = new System.Drawing.Size(197, 22);
-            this.csc_textbox.TabIndex = 5;
-            // 
-            // update_button
-            // 
-            this.update_button.Location = new System.Drawing.Point(186, 295);
-            this.update_button.Margin = new System.Windows.Forms.Padding(4);
-            this.update_button.Name = "update_button";
-            this.update_button.Size = new System.Drawing.Size(124, 28);
-            this.update_button.TabIndex = 10;
-            this.update_button.Text = "Check Update";
-            this.update_button.UseVisualStyleBackColor = true;
-            this.update_button.Click += new System.EventHandler(this.update_button_Click);
-            // 
-            // phone_lbl
-            // 
-            this.phone_lbl.AutoSize = true;
-            this.phone_lbl.Location = new System.Drawing.Point(13, 82);
-            this.phone_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.phone_lbl.Name = "phone_lbl";
-            this.phone_lbl.Size = new System.Drawing.Size(46, 16);
-            this.phone_lbl.TabIndex = 12;
-            this.phone_lbl.Text = "Phone";
-            // 
-            // phone_textbox
-            // 
-            this.phone_textbox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
-            this.phone_textbox.Location = new System.Drawing.Point(105, 79);
-            this.phone_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.phone_textbox.Name = "phone_textbox";
-            this.phone_textbox.Size = new System.Drawing.Size(197, 22);
-            this.phone_textbox.TabIndex = 6;
-            // 
-            // file_lbl
-            // 
-            this.file_lbl.AutoSize = true;
-            this.file_lbl.Location = new System.Drawing.Point(8, 31);
-            this.file_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.file_lbl.Name = "file_lbl";
-            this.file_lbl.Size = new System.Drawing.Size(29, 16);
-            this.file_lbl.TabIndex = 13;
-            this.file_lbl.Text = "File";
-            // 
-            // file_textbox
-            // 
-            this.file_textbox.Location = new System.Drawing.Point(100, 22);
-            this.file_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.file_textbox.Name = "file_textbox";
-            this.file_textbox.ReadOnly = true;
-            this.file_textbox.Size = new System.Drawing.Size(385, 22);
-            this.file_textbox.TabIndex = 20;
-            this.file_textbox.TabStop = false;
-            // 
-            // version_lbl
-            // 
-            this.version_lbl.AutoSize = true;
-            this.version_lbl.Location = new System.Drawing.Point(8, 63);
-            this.version_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.version_lbl.Name = "version_lbl";
-            this.version_lbl.Size = new System.Drawing.Size(53, 16);
-            this.version_lbl.TabIndex = 15;
-            this.version_lbl.Text = "Version";
-            // 
-            // version_textbox
-            // 
-            this.version_textbox.Location = new System.Drawing.Point(100, 54);
-            this.version_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.version_textbox.Name = "version_textbox";
-            this.version_textbox.ReadOnly = true;
-            this.version_textbox.Size = new System.Drawing.Size(385, 22);
-            this.version_textbox.TabIndex = 30;
-            this.version_textbox.TabStop = false;
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.imei_lbl);
-            this.groupBox1.Controls.Add(this.imei_textbox);
-            this.groupBox1.Controls.Add(this.groupBox3);
-            this.groupBox1.Controls.Add(this.checkbox_manual);
-            this.groupBox1.Controls.Add(this.checkbox_auto);
-            this.groupBox1.Controls.Add(this.binary_checkbox);
-            this.groupBox1.Controls.Add(this.binary_lbl);
-            this.groupBox1.Controls.Add(this.model_textbox);
-            this.groupBox1.Controls.Add(this.model_lbl);
-            this.groupBox1.Controls.Add(this.update_button);
-            this.groupBox1.Controls.Add(this.region_textbox);
-            this.groupBox1.Controls.Add(this.region_lbl);
-            this.groupBox1.Location = new System.Drawing.Point(16, 15);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(349, 336);
-            this.groupBox1.TabIndex = 17;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Firmware Info";
-            // 
-            // imei_lbl
-            // 
-            this.imei_lbl.AutoSize = true;
-            this.imei_lbl.Location = new System.Drawing.Point(11, 97);
-            this.imei_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.imei_lbl.Name = "imei_lbl";
-            this.imei_lbl.Size = new System.Drawing.Size(71, 16);
-            this.imei_lbl.TabIndex = 19;
-            this.imei_lbl.Text = "Imei/Serial";
-            this.imei_lbl.Click += new System.EventHandler(this.imei_lbl_Click);
-            // 
-            // imei_textbox
+            this.comboBoxRegion.Location = new System.Drawing.Point(103, 33);
+            this.comboBoxRegion.Name = "comboBoxRegion";
+            this.comboBoxRegion.Size = new System.Drawing.Size(278, 23);
+            this.comboBoxRegion.TabIndex = 1;
             //
-            this.imei_textbox.Location = new System.Drawing.Point(113, 89);
-            this.imei_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.imei_textbox.Name = "imei_textbox";
-            this.imei_textbox.Size = new System.Drawing.Size(197, 24);
-            this.imei_textbox.TabIndex = 18;
-            // 
-            // groupBox3
-            // 
-            this.groupBox3.Controls.Add(this.phone_textbox);
-            this.groupBox3.Controls.Add(this.csc_lbl);
-            this.groupBox3.Controls.Add(this.csc_textbox);
-            this.groupBox3.Controls.Add(this.pda_lbl);
-            this.groupBox3.Controls.Add(this.pda_textbox);
-            this.groupBox3.Controls.Add(this.phone_lbl);
-            this.groupBox3.Location = new System.Drawing.Point(8, 180);
-            this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Size = new System.Drawing.Size(333, 110);
-            this.groupBox3.TabIndex = 17;
-            this.groupBox3.TabStop = false;
-            // 
-            // checkbox_manual
-            // 
-            this.checkbox_manual.AutoSize = true;
-            this.checkbox_manual.Location = new System.Drawing.Point(172, 149);
-            this.checkbox_manual.Margin = new System.Windows.Forms.Padding(4);
-            this.checkbox_manual.Name = "checkbox_manual";
-            this.checkbox_manual.Size = new System.Drawing.Size(73, 20);
-            this.checkbox_manual.TabIndex = 3;
-            this.checkbox_manual.Text = "Manual";
-            this.checkbox_manual.UseVisualStyleBackColor = true;
-            this.checkbox_manual.CheckedChanged += new System.EventHandler(this.checkbox_manual_CheckedChanged);
-            // 
-            // checkbox_auto
-            // 
-            this.checkbox_auto.AutoSize = true;
-            this.checkbox_auto.Location = new System.Drawing.Point(14, 152);
-            this.checkbox_auto.Margin = new System.Windows.Forms.Padding(4);
-            this.checkbox_auto.Name = "checkbox_auto";
-            this.checkbox_auto.Size = new System.Drawing.Size(56, 20);
-            this.checkbox_auto.TabIndex = 2;
-            this.checkbox_auto.Text = "Auto";
-            this.checkbox_auto.UseVisualStyleBackColor = true;
-            this.checkbox_auto.CheckedChanged += new System.EventHandler(this.checkbox_auto_CheckedChanged);
-            // 
-            // binary_checkbox
-            // 
-            this.binary_checkbox.AutoSize = true;
-            this.binary_checkbox.Location = new System.Drawing.Point(113, 306);
-            this.binary_checkbox.Margin = new System.Windows.Forms.Padding(4);
-            this.binary_checkbox.Name = "binary_checkbox";
-            this.binary_checkbox.Size = new System.Drawing.Size(18, 17);
-            this.binary_checkbox.TabIndex = 7;
-            this.binary_checkbox.UseVisualStyleBackColor = true;
-            // 
-            // binary_lbl
-            // 
-            this.binary_lbl.AutoSize = true;
-            this.binary_lbl.Location = new System.Drawing.Point(11, 307);
-            this.binary_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.binary_lbl.Name = "binary_lbl";
-            this.binary_lbl.Size = new System.Drawing.Size(88, 16);
-            this.binary_lbl.TabIndex = 13;
-            this.binary_lbl.Text = "Binary Nature";
-            // 
+            // labelImei
+            //
+            this.labelImei.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelImei.AutoSize = true;
+            this.labelImei.Location = new System.Drawing.Point(3, 67);
+            this.labelImei.Name = "labelImei";
+            this.labelImei.Size = new System.Drawing.Size(63, 15);
+            this.labelImei.TabIndex = 4;
+            this.labelImei.Text = "Imei/Serial";
+            this.labelImei.Click += new System.EventHandler(this.labelImei_Click);
+            //
+            // textBoxImei
+            //
+            this.textBoxImei.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxImei.Location = new System.Drawing.Point(103, 63);
+            this.textBoxImei.Name = "textBoxImei";
+            this.textBoxImei.Size = new System.Drawing.Size(278, 23);
+            this.textBoxImei.TabIndex = 2;
+            //
+            // checkBoxAuto
+            //
+            this.checkBoxAuto.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.checkBoxAuto.AutoSize = true;
+            this.checkBoxAuto.Location = new System.Drawing.Point(3, 95);
+            this.checkBoxAuto.Name = "checkBoxAuto";
+            this.checkBoxAuto.Size = new System.Drawing.Size(52, 19);
+            this.checkBoxAuto.TabIndex = 3;
+            this.checkBoxAuto.Text = "Auto";
+            this.checkBoxAuto.UseVisualStyleBackColor = true;
+            this.checkBoxAuto.CheckedChanged += new System.EventHandler(this.checkBoxAuto_CheckedChanged);
+            //
+            // checkBoxManual
+            //
+            this.checkBoxManual.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.checkBoxManual.AutoSize = true;
+            this.checkBoxManual.Location = new System.Drawing.Point(103, 95);
+            this.checkBoxManual.Name = "checkBoxManual";
+            this.checkBoxManual.Size = new System.Drawing.Size(66, 19);
+            this.checkBoxManual.TabIndex = 4;
+            this.checkBoxManual.Text = "Manual";
+            this.checkBoxManual.UseVisualStyleBackColor = true;
+            this.checkBoxManual.CheckedChanged += new System.EventHandler(this.checkBoxManual_CheckedChanged);
+            //
+            // groupBoxManual
+            //
+            this.tableLayoutInfo.SetColumnSpan(this.groupBoxManual, 2);
+            this.groupBoxManual.Controls.Add(this.tableLayoutManual);
+            this.groupBoxManual.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxManual.Location = new System.Drawing.Point(3, 123);
+            this.groupBoxManual.Name = "groupBoxManual";
+            this.groupBoxManual.Size = new System.Drawing.Size(378, 104);
+            this.groupBoxManual.TabIndex = 8;
+            this.groupBoxManual.TabStop = false;
+            //
+            // tableLayoutManual
+            //
+            this.tableLayoutManual.ColumnCount = 2;
+            this.tableLayoutManual.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 94F));
+            this.tableLayoutManual.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutManual.Controls.Add(this.labelPda, 0, 0);
+            this.tableLayoutManual.Controls.Add(this.textBoxPda, 1, 0);
+            this.tableLayoutManual.Controls.Add(this.labelCsc, 0, 1);
+            this.tableLayoutManual.Controls.Add(this.textBoxCsc, 1, 1);
+            this.tableLayoutManual.Controls.Add(this.labelPhone, 0, 2);
+            this.tableLayoutManual.Controls.Add(this.textBoxPhone, 1, 2);
+            this.tableLayoutManual.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutManual.Location = new System.Drawing.Point(3, 19);
+            this.tableLayoutManual.Name = "tableLayoutManual";
+            this.tableLayoutManual.RowCount = 3;
+            this.tableLayoutManual.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
+            this.tableLayoutManual.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
+            this.tableLayoutManual.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
+            this.tableLayoutManual.Size = new System.Drawing.Size(372, 82);
+            this.tableLayoutManual.TabIndex = 0;
+            //
+            // labelPda
+            //
+            this.labelPda.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelPda.AutoSize = true;
+            this.labelPda.Location = new System.Drawing.Point(3, 6);
+            this.labelPda.Name = "labelPda";
+            this.labelPda.Size = new System.Drawing.Size(30, 15);
+            this.labelPda.TabIndex = 0;
+            this.labelPda.Text = "PDA";
+            //
+            // textBoxPda
+            //
+            this.textBoxPda.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
+            this.textBoxPda.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxPda.Location = new System.Drawing.Point(97, 3);
+            this.textBoxPda.Name = "textBoxPda";
+            this.textBoxPda.Size = new System.Drawing.Size(272, 23);
+            this.textBoxPda.TabIndex = 5;
+            //
+            // labelCsc
+            //
+            this.labelCsc.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelCsc.AutoSize = true;
+            this.labelCsc.Location = new System.Drawing.Point(3, 34);
+            this.labelCsc.Name = "labelCsc";
+            this.labelCsc.Size = new System.Drawing.Size(29, 15);
+            this.labelCsc.TabIndex = 2;
+            this.labelCsc.Text = "CSC";
+            //
+            // textBoxCsc
+            //
+            this.textBoxCsc.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
+            this.textBoxCsc.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxCsc.Location = new System.Drawing.Point(97, 31);
+            this.textBoxCsc.Name = "textBoxCsc";
+            this.textBoxCsc.Size = new System.Drawing.Size(272, 23);
+            this.textBoxCsc.TabIndex = 6;
+            //
+            // labelPhone
+            //
+            this.labelPhone.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelPhone.AutoSize = true;
+            this.labelPhone.Location = new System.Drawing.Point(3, 62);
+            this.labelPhone.Name = "labelPhone";
+            this.labelPhone.Size = new System.Drawing.Size(41, 15);
+            this.labelPhone.TabIndex = 4;
+            this.labelPhone.Text = "Phone";
+            //
+            // textBoxPhone
+            //
+            this.textBoxPhone.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
+            this.textBoxPhone.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxPhone.Location = new System.Drawing.Point(97, 59);
+            this.textBoxPhone.Name = "textBoxPhone";
+            this.textBoxPhone.Size = new System.Drawing.Size(272, 23);
+            this.textBoxPhone.TabIndex = 7;
+            //
+            // labelBinary
+            //
+            this.labelBinary.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelBinary.AutoSize = true;
+            this.labelBinary.Location = new System.Drawing.Point(3, 237);
+            this.labelBinary.Name = "labelBinary";
+            this.labelBinary.Size = new System.Drawing.Size(79, 15);
+            this.labelBinary.TabIndex = 9;
+            this.labelBinary.Text = "Binary Nature";
+            //
+            // checkBoxBinary
+            //
+            this.checkBoxBinary.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.checkBoxBinary.AutoSize = true;
+            this.checkBoxBinary.Location = new System.Drawing.Point(103, 238);
+            this.checkBoxBinary.Name = "checkBoxBinary";
+            this.checkBoxBinary.Size = new System.Drawing.Size(15, 14);
+            this.checkBoxBinary.TabIndex = 9;
+            this.checkBoxBinary.UseVisualStyleBackColor = true;
+            //
+            // buttonUpdate
+            //
+            this.buttonUpdate.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.buttonUpdate.Location = new System.Drawing.Point(251, 276);
+            this.buttonUpdate.Name = "buttonUpdate";
+            this.buttonUpdate.Size = new System.Drawing.Size(130, 30);
+            this.buttonUpdate.TabIndex = 10;
+            this.buttonUpdate.Text = "Check Update";
+            this.buttonUpdate.UseVisualStyleBackColor = true;
+            this.buttonUpdate.Click += new System.EventHandler(this.buttonUpdate_Click);
+            //
+            // groupBoxDownload
+            //
+            this.groupBoxDownload.Controls.Add(this.tableLayoutDownload);
+            this.groupBoxDownload.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxDownload.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.groupBoxDownload.Location = new System.Drawing.Point(409, 13);
+            this.groupBoxDownload.Name = "groupBoxDownload";
+            this.groupBoxDownload.Size = new System.Drawing.Size(478, 344);
+            this.groupBoxDownload.TabIndex = 1;
+            this.groupBoxDownload.TabStop = false;
+            this.groupBoxDownload.Text = "Download";
+            //
+            // tableLayoutDownload
+            //
+            this.tableLayoutDownload.ColumnCount = 2;
+            this.tableLayoutDownload.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 80F));
+            this.tableLayoutDownload.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutDownload.Controls.Add(this.labelFile, 0, 0);
+            this.tableLayoutDownload.Controls.Add(this.textBoxFile, 1, 0);
+            this.tableLayoutDownload.Controls.Add(this.labelVersion, 0, 1);
+            this.tableLayoutDownload.Controls.Add(this.textBoxVersion, 1, 1);
+            this.tableLayoutDownload.Controls.Add(this.labelSize, 0, 2);
+            this.tableLayoutDownload.Controls.Add(this.textBoxSize, 1, 2);
+            this.tableLayoutDownload.Controls.Add(this.checkBoxCrc, 1, 3);
+            this.tableLayoutDownload.Controls.Add(this.checkBoxAutoDecrypt, 1, 4);
+            this.tableLayoutDownload.Controls.Add(this.flowLayoutDownloadButtons, 1, 5);
+            this.tableLayoutDownload.Controls.Add(this.progressBar, 1, 6);
+            this.tableLayoutDownload.Controls.Add(this.labelSpeedTitle, 0, 7);
+            this.tableLayoutDownload.Controls.Add(this.labelSpeed, 1, 7);
+            this.tableLayoutDownload.Controls.Add(this.labelTransferred, 1, 8);
+            this.tableLayoutDownload.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutDownload.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.tableLayoutDownload.Location = new System.Drawing.Point(3, 19);
+            this.tableLayoutDownload.Name = "tableLayoutDownload";
+            this.tableLayoutDownload.RowCount = 9;
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 35F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
+            this.tableLayoutDownload.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
+            this.tableLayoutDownload.Size = new System.Drawing.Size(472, 322);
+            this.tableLayoutDownload.TabIndex = 0;
+            //
+            // labelFile
+            //
+            this.labelFile.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelFile.AutoSize = true;
+            this.labelFile.Location = new System.Drawing.Point(3, 7);
+            this.labelFile.Name = "labelFile";
+            this.labelFile.Size = new System.Drawing.Size(25, 15);
+            this.labelFile.TabIndex = 0;
+            this.labelFile.Text = "File";
+            //
+            // textBoxFile
+            //
+            this.textBoxFile.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxFile.Location = new System.Drawing.Point(83, 3);
+            this.textBoxFile.Name = "textBoxFile";
+            this.textBoxFile.ReadOnly = true;
+            this.textBoxFile.Size = new System.Drawing.Size(386, 23);
+            this.textBoxFile.TabIndex = 11;
+            //
+            // labelVersion
+            //
+            this.labelVersion.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelVersion.AutoSize = true;
+            this.labelVersion.Location = new System.Drawing.Point(3, 37);
+            this.labelVersion.Name = "labelVersion";
+            this.labelVersion.Size = new System.Drawing.Size(45, 15);
+            this.labelVersion.TabIndex = 2;
+            this.labelVersion.Text = "Version";
+            //
+            // textBoxVersion
+            //
+            this.textBoxVersion.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxVersion.Location = new System.Drawing.Point(83, 33);
+            this.textBoxVersion.Name = "textBoxVersion";
+            this.textBoxVersion.ReadOnly = true;
+            this.textBoxVersion.Size = new System.Drawing.Size(386, 23);
+            this.textBoxVersion.TabIndex = 12;
+            //
+            // labelSize
+            //
+            this.labelSize.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelSize.AutoSize = true;
+            this.labelSize.Location = new System.Drawing.Point(3, 67);
+            this.labelSize.Name = "labelSize";
+            this.labelSize.Size = new System.Drawing.Size(27, 15);
+            this.labelSize.TabIndex = 4;
+            this.labelSize.Text = "Size";
+            //
+            // textBoxSize
+            //
+            this.textBoxSize.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxSize.Location = new System.Drawing.Point(83, 63);
+            this.textBoxSize.Name = "textBoxSize";
+            this.textBoxSize.ReadOnly = true;
+            this.textBoxSize.Size = new System.Drawing.Size(386, 23);
+            this.textBoxSize.TabIndex = 13;
+            //
+            // checkBoxCrc
+            //
+            this.checkBoxCrc.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.checkBoxCrc.AutoSize = true;
+            this.checkBoxCrc.Checked = true;
+            this.checkBoxCrc.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxCrc.Location = new System.Drawing.Point(83, 95);
+            this.checkBoxCrc.Name = "checkBoxCrc";
+            this.checkBoxCrc.Size = new System.Drawing.Size(97, 19);
+            this.checkBoxCrc.TabIndex = 14;
+            this.checkBoxCrc.Text = "Check CRC32";
+            this.checkBoxCrc.UseVisualStyleBackColor = true;
+            //
+            // checkBoxAutoDecrypt
+            //
+            this.checkBoxAutoDecrypt.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.checkBoxAutoDecrypt.AutoSize = true;
+            this.checkBoxAutoDecrypt.Checked = true;
+            this.checkBoxAutoDecrypt.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxAutoDecrypt.Location = new System.Drawing.Point(83, 125);
+            this.checkBoxAutoDecrypt.Name = "checkBoxAutoDecrypt";
+            this.checkBoxAutoDecrypt.Size = new System.Drawing.Size(143, 19);
+            this.checkBoxAutoDecrypt.TabIndex = 15;
+            this.checkBoxAutoDecrypt.Text = "Decrypt automatically";
+            this.checkBoxAutoDecrypt.UseVisualStyleBackColor = true;
+            //
+            // flowLayoutDownloadButtons
+            //
+            this.flowLayoutDownloadButtons.Controls.Add(this.buttonDownload);
+            this.flowLayoutDownloadButtons.Controls.Add(this.buttonDecrypt);
+            this.flowLayoutDownloadButtons.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flowLayoutDownloadButtons.Location = new System.Drawing.Point(80, 150);
+            this.flowLayoutDownloadButtons.Margin = new System.Windows.Forms.Padding(0);
+            this.flowLayoutDownloadButtons.Name = "flowLayoutDownloadButtons";
+            this.flowLayoutDownloadButtons.Size = new System.Drawing.Size(392, 40);
+            this.flowLayoutDownloadButtons.TabIndex = 16;
+            //
+            // buttonDownload
+            //
+            this.buttonDownload.Location = new System.Drawing.Point(3, 3);
+            this.buttonDownload.Name = "buttonDownload";
+            this.buttonDownload.Size = new System.Drawing.Size(100, 30);
+            this.buttonDownload.TabIndex = 16;
+            this.buttonDownload.Text = "Download";
+            this.buttonDownload.UseVisualStyleBackColor = true;
+            this.buttonDownload.Click += new System.EventHandler(this.buttonDownload_Click);
+            //
+            // buttonDecrypt
+            //
+            this.buttonDecrypt.Enabled = false;
+            this.buttonDecrypt.Location = new System.Drawing.Point(109, 3);
+            this.buttonDecrypt.Name = "buttonDecrypt";
+            this.buttonDecrypt.Size = new System.Drawing.Size(100, 30);
+            this.buttonDecrypt.TabIndex = 17;
+            this.buttonDecrypt.Text = "Decrypt";
+            this.buttonDecrypt.UseVisualStyleBackColor = true;
+            this.buttonDecrypt.Click += new System.EventHandler(this.buttonDecrypt_Click);
+            //
             // progressBar
-            // 
-            this.progressBar.Location = new System.Drawing.Point(100, 180);
-            this.progressBar.Margin = new System.Windows.Forms.Padding(4);
+            //
+            this.progressBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.progressBar.Location = new System.Drawing.Point(83, 193);
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(387, 28);
+            this.progressBar.Size = new System.Drawing.Size(386, 29);
             this.progressBar.TabIndex = 18;
-            // 
-            // decrypt_button
-            // 
-            this.decrypt_button.Enabled = false;
-            this.decrypt_button.Location = new System.Drawing.Point(251, 144);
-            this.decrypt_button.Margin = new System.Windows.Forms.Padding(4);
-            this.decrypt_button.Name = "decrypt_button";
-            this.decrypt_button.Size = new System.Drawing.Size(169, 28);
-            this.decrypt_button.TabIndex = 14;
-            this.decrypt_button.Text = "Decrypt";
-            this.decrypt_button.UseVisualStyleBackColor = true;
-            this.decrypt_button.Click += new System.EventHandler(this.decrypt_button_Click);
-            // 
-            // groupBox2
-            // 
-            this.groupBox2.Controls.Add(this.lbl_transferred);
-            this.groupBox2.Controls.Add(this.label1);
-            this.groupBox2.Controls.Add(this.lbl_speed);
-            this.groupBox2.Controls.Add(this.checkbox_autodecrypt);
-            this.groupBox2.Controls.Add(this.checkbox_crc);
-            this.groupBox2.Controls.Add(this.size_textbox);
-            this.groupBox2.Controls.Add(this.size_lbl);
-            this.groupBox2.Controls.Add(this.progressBar);
-            this.groupBox2.Controls.Add(this.decrypt_button);
-            this.groupBox2.Controls.Add(this.download_button);
-            this.groupBox2.Controls.Add(this.file_lbl);
-            this.groupBox2.Controls.Add(this.file_textbox);
-            this.groupBox2.Controls.Add(this.version_textbox);
-            this.groupBox2.Controls.Add(this.version_lbl);
-            this.groupBox2.Location = new System.Drawing.Point(373, 15);
-            this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Size = new System.Drawing.Size(495, 336);
-            this.groupBox2.TabIndex = 20;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Download";
-            // 
-            // lbl_transferred
-            // 
-            this.lbl_transferred.AutoSize = true;
-            this.lbl_transferred.Location = new System.Drawing.Point(247, 217);
-            this.lbl_transferred.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lbl_transferred.Name = "lbl_transferred";
-            this.lbl_transferred.Size = new System.Drawing.Size(37, 16);
-            this.lbl_transferred.TabIndex = 41;
-            this.lbl_transferred.Text = "0 MB";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(8, 217);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(48, 16);
-            this.label1.TabIndex = 25;
-            this.label1.Text = "Speed";
-            // 
-            // lbl_speed
-            // 
-            this.lbl_speed.AutoSize = true;
-            this.lbl_speed.Location = new System.Drawing.Point(96, 217);
-            this.lbl_speed.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lbl_speed.Name = "lbl_speed";
-            this.lbl_speed.Size = new System.Drawing.Size(45, 16);
-            this.lbl_speed.TabIndex = 24;
-            this.lbl_speed.Text = "0 KB/s";
-            // 
-            // checkbox_autodecrypt
-            // 
-            this.checkbox_autodecrypt.AutoSize = true;
-            this.checkbox_autodecrypt.Checked = true;
-            this.checkbox_autodecrypt.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkbox_autodecrypt.Location = new System.Drawing.Point(252, 118);
-            this.checkbox_autodecrypt.Margin = new System.Windows.Forms.Padding(4);
-            this.checkbox_autodecrypt.Name = "checkbox_autodecrypt";
-            this.checkbox_autodecrypt.Size = new System.Drawing.Size(158, 20);
-            this.checkbox_autodecrypt.TabIndex = 12;
-            this.checkbox_autodecrypt.Text = "Decrypt automatically";
-            this.checkbox_autodecrypt.UseVisualStyleBackColor = true;
-            // 
-            // checkbox_crc
-            // 
-            this.checkbox_crc.AutoSize = true;
-            this.checkbox_crc.Checked = true;
-            this.checkbox_crc.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkbox_crc.Location = new System.Drawing.Point(100, 118);
-            this.checkbox_crc.Margin = new System.Windows.Forms.Padding(4);
-            this.checkbox_crc.Name = "checkbox_crc";
-            this.checkbox_crc.Size = new System.Drawing.Size(112, 20);
-            this.checkbox_crc.TabIndex = 11;
-            this.checkbox_crc.Text = "Check CRC32";
-            this.checkbox_crc.UseVisualStyleBackColor = true;
-            // 
-            // size_textbox
-            // 
-            this.size_textbox.Location = new System.Drawing.Point(100, 86);
-            this.size_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.size_textbox.Name = "size_textbox";
-            this.size_textbox.ReadOnly = true;
-            this.size_textbox.Size = new System.Drawing.Size(385, 22);
-            this.size_textbox.TabIndex = 40;
-            this.size_textbox.TabStop = false;
-            // 
-            // size_lbl
-            // 
-            this.size_lbl.AutoSize = true;
-            this.size_lbl.Location = new System.Drawing.Point(8, 92);
-            this.size_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.size_lbl.Name = "size_lbl";
-            this.size_lbl.Size = new System.Drawing.Size(33, 16);
-            this.size_lbl.TabIndex = 20;
-            this.size_lbl.Text = "Size";
-            // 
-            // saveFileDialog1
-            // 
-            this.saveFileDialog1.SupportMultiDottedExtensions = true;
-            // 
+            //
+            // labelSpeedTitle
+            //
+            this.labelSpeedTitle.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelSpeedTitle.AutoSize = true;
+            this.labelSpeedTitle.Location = new System.Drawing.Point(3, 230);
+            this.labelSpeedTitle.Name = "labelSpeedTitle";
+            this.labelSpeedTitle.Size = new System.Drawing.Size(39, 15);
+            this.labelSpeedTitle.TabIndex = 19;
+            this.labelSpeedTitle.Text = "Speed";
+            //
+            // labelSpeed
+            //
+            this.labelSpeed.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelSpeed.AutoSize = true;
+            this.labelSpeed.Location = new System.Drawing.Point(83, 230);
+            this.labelSpeed.Name = "labelSpeed";
+            this.labelSpeed.Size = new System.Drawing.Size(38, 15);
+            this.labelSpeed.TabIndex = 20;
+            this.labelSpeed.Text = "0 KB/s";
+            //
+            // labelTransferred
+            //
+            this.labelTransferred.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelTransferred.AutoSize = true;
+            this.labelTransferred.Location = new System.Drawing.Point(83, 273);
+            this.labelTransferred.Name = "labelTransferred";
+            this.labelTransferred.Size = new System.Drawing.Size(35, 15);
+            this.labelTransferred.TabIndex = 21;
+            this.labelTransferred.Text = "0 MB";
+            //
+            // richTextBoxLog
+            //
+            this.tableLayoutMain.SetColumnSpan(this.richTextBoxLog, 2);
+            this.richTextBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.richTextBoxLog.Font = new System.Drawing.Font("Consolas", 9F);
+            this.richTextBoxLog.Location = new System.Drawing.Point(13, 363);
+            this.richTextBoxLog.Name = "richTextBoxLog";
+            this.richTextBoxLog.ReadOnly = true;
+            this.richTextBoxLog.Size = new System.Drawing.Size(874, 224);
+            this.richTextBoxLog.TabIndex = 22;
+            this.richTextBoxLog.Text = "";
+            //
+            // saveFileDialog
+            //
+            this.saveFileDialog.SupportMultiDottedExtensions = true;
+            //
             // Form1
-            // 
-            this.AcceptButton = this.update_button;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            //
+            this.AcceptButton = this.buttonUpdate;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(891, 543);
-            this.Controls.Add(this.groupBox2);
-            this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.log_textbox);
+            this.ClientSize = new System.Drawing.Size(900, 600);
+            this.Controls.Add(this.tableLayoutMain);
+            this.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Form1";
-            this.Text = "SamFirm (BornAgain Edition)";
+            this.Text = "SamFirm Reborn";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_Close);
             this.Load += new System.EventHandler(this.Form1_Load);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox3.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
+            this.groupBoxInfo.ResumeLayout(false);
+            this.groupBoxManual.ResumeLayout(false);
+            this.groupBoxDownload.ResumeLayout(false);
+            this.tableLayoutMain.ResumeLayout(false);
+            this.tableLayoutInfo.ResumeLayout(false);
+            this.tableLayoutInfo.PerformLayout();
+            this.tableLayoutDownload.ResumeLayout(false);
+            this.tableLayoutDownload.PerformLayout();
+            this.flowLayoutDownloadButtons.ResumeLayout(false);
+            this.tableLayoutManual.ResumeLayout(false);
+            this.tableLayoutManual.PerformLayout();
             this.ResumeLayout(false);
+        }
 
-    }
-
-    public class DownloadEventArgs : EventArgs
-    {
-      public bool isReconnect;
-    }
-
-        private void imei_lbl_Click(object sender, EventArgs e)
+        public class DownloadEventArgs : EventArgs
         {
+            public bool isReconnect;
+        }
 
+        private void labelImei_Click(object sender, EventArgs e)
+        {
         }
     }
 }

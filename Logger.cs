@@ -18,20 +18,20 @@ namespace SamFirm
     {
       if (Utility.run_by_cmd)
         return;
-      if (Logger.form.log_textbox.InvokeRequired)
+      if (Logger.form.richTextBoxLog.InvokeRequired)
       {
-        Logger.form.log_textbox.Invoke((Delegate)((Action)(() =>
+        Logger.form.richTextBoxLog.Invoke((Delegate)((Action)(() =>
         {
-          if (Logger.form.log_textbox.Lines.Length <= 30)
+          if (Logger.form.richTextBoxLog.Lines.Length <= 30)
             return;
-          Logger.form.log_textbox.Text.Remove(0, Logger.form.log_textbox.GetFirstCharIndexFromLine(1));
+          Logger.form.richTextBoxLog.Text.Remove(0, Logger.form.richTextBoxLog.GetFirstCharIndexFromLine(1));
         })));
       }
       else
       {
-        if (Logger.form.log_textbox.Lines.Length <= 30)
+        if (Logger.form.richTextBoxLog.Lines.Length <= 30)
           return;
-        Logger.form.log_textbox.Text.Remove(0, Logger.form.log_textbox.GetFirstCharIndexFromLine(1));
+        Logger.form.richTextBoxLog.Text.Remove(0, Logger.form.richTextBoxLog.GetFirstCharIndexFromLine(1));
       }
     }
 
@@ -44,18 +44,18 @@ namespace SamFirm
         str += "\n";
       if (Utility.run_by_cmd)
         Console.Write(str);
-      else if (Logger.form.log_textbox.InvokeRequired)
+      else if (Logger.form.richTextBoxLog.InvokeRequired)
       {
-        Logger.form.log_textbox.Invoke((Delegate)((Action)(() =>
+        Logger.form.richTextBoxLog.Invoke((Delegate)((Action)(() =>
         {
-          Logger.form.log_textbox.AppendText(str);
-          Logger.form.log_textbox.ScrollToCaret();
+          Logger.form.richTextBoxLog.AppendText(str);
+          Logger.form.richTextBoxLog.ScrollToCaret();
         })));
       }
       else
       {
-        Logger.form.log_textbox.AppendText(str);
-        Logger.form.log_textbox.ScrollToCaret();
+        Logger.form.richTextBoxLog.AppendText(str);
+        Logger.form.richTextBoxLog.ScrollToCaret();
       }
     }
 
@@ -67,7 +67,7 @@ namespace SamFirm
 
       try
       {
-        if (string.IsNullOrEmpty(Logger.form.log_textbox.Text))
+        if (string.IsNullOrEmpty(Logger.form.richTextBoxLog.Text))
           return;
         if (File.Exists(LogFile) && new FileInfo(LogFile).Length > 2097152L)
         {
@@ -78,7 +78,7 @@ namespace SamFirm
         {
           textWriter.WriteLine();
           textWriter.WriteLine(Logger.GetTimeDate());
-          foreach (string line in Logger.form.log_textbox.Lines)
+          foreach (string line in Logger.form.richTextBoxLog.Lines)
             textWriter.WriteLine(line);
         }
       }
