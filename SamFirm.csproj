@@ -15,7 +15,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.0</ApplicationVersion>
+    <ApplicationVersion>1.0.0.2</ApplicationVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -24,11 +24,11 @@
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Product>SamFirm Reborn</Product>
-    <FileVersion>0.3.6.8</FileVersion>
+    <FileVersion>0.3.6.9</FileVersion>
     <Description>BornAgain Edition</Description>
     <Copyright>Copyright zxz0O0 ©  2015 / Ivan Meler 2021-2023 / KSmith 2023 / corsicanu 2024</Copyright>
     <AssemblyTitle>SamFirm Reborn</AssemblyTitle>
-    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <AssemblyVersion>1.0.0.2</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>SamFirm.Program</StartupObject>

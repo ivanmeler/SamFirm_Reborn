@@ -11,17 +11,18 @@ namespace SamFirm
   internal class Web
   {
     public static string JSessionID = string.Empty;
+    public static CookieContainer CookieContainer = new CookieContainer();
     public static string EncryptedNonce = string.Empty;
     public static byte[] DecryptedNonce = null;
-    public static string Nonce => Encoding.UTF8.GetString(DecryptedNonce);
+    public static string Nonce => DecryptedNonce == null ? string.Empty : Encoding.ASCII.GetString(DecryptedNonce);
     public static string Auth = string.Empty;
     public static string AuthHeaderWithNonce => $"FUS nonce=\"{EncryptedNonce}\", signature=\"{Auth}\", nc=\"\", type=\"\", realm=\"\", newauth=\"1\"";
-    public static string AuthHeaderNoNonce => $"FUS nonce=\"\", signature=\"{Auth}\", nc=\"\", type=\"\", realm=\"\", newauth=\"1\"";
+    public static string AuthHeaderNoNonce => $"FUS nonce=\"{EncryptedNonce}\", signature=\"{Auth}\", nc=\"\", type=\"\", realm=\"\", newauth=\"1\"";
     public static Form1 form;
 
     public static int GenerateNonce()
     {
-      HttpWebRequest wr = KiesRequest.Create("https://neofussvr.sslcs.cdngc.net/NF_DownloadGenerateNonce.do");
+      HttpWebRequest wr = KiesRequest.Create("https://neofussvr.sslcs.cdngc.net/NF_SmartDownloadGenerateNonce.do");
       wr.Method = "POST";
       string authv = $"FUS nonce=\"\", signature=\"\", nc=\"\", type=\"\", realm=\"\", newauth=\"1\"";
       wr.Headers["Authorization"] = authv;
@@ -37,12 +38,12 @@ namespace SamFirm
 
     public static int DownloadBinaryInform(string xml, out string xmlresponse)
     {
-      return Web.XMLFUSRequest("https://neofussvr.sslcs.cdngc.net/NF_DownloadBinaryInform.do", xml, out xmlresponse);
+      return Web.XMLFUSRequest("https://neofussvr.sslcs.cdngc.net/NF_SmartDownloadBinaryInform.do", xml, out xmlresponse);
     }
 
     public static int DownloadBinaryInit(string xml, out string xmlresponse)
     {
-      return Web.XMLFUSRequest("https://neofussvr.sslcs.cdngc.net/NF_DownloadBinaryInitForMass.do", xml, out xmlresponse);
+      return Web.XMLFUSRequest("https://neofussvr.sslcs.cdngc.net/NF_SmartDownloadBinaryInitForMass.do", xml, out xmlresponse);
     }
 
     private static int XMLFUSRequest(string URL, string xml, out string xmlresponse)
@@ -94,7 +95,7 @@ namespace SamFirm
       bool GUI = true)
     {
       long bytesTransferred = 0;
-      HttpWebRequest wr = KiesRequest.Create("http://cloud-neofussvr.samsungmobile.com/NF_DownloadBinaryForMass.do?file=" + path + file);
+      HttpWebRequest wr = KiesRequest.Create("http://cloud-neofussvr.samsungmobile.com/NF_SmartDownloadBinaryForMass.do?file=" + path + file);
       wr.Method = "GET";
       wr.Headers["Authorization"] = AuthHeaderWithNonce;
       wr.Timeout = 25000;

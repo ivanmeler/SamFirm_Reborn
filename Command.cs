@@ -88,10 +88,13 @@ namespace SamFirm
         Utility.CheckHTMLXMLStatus(htmlstatus, Utility.GetXMLStatusCode(xmlresponse));
         return firmware;
       }
-      firmware.Version = Xml.GetXMLValue(xmlresponse, "FUSBody/Results/LATEST_FW_VERSION/Data", (string) null, (string) null);
-      firmware.Model = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/DEVICE_MODEL_NAME/Data", (string) null, (string) null);
+      List<KeyValuePair<string, string>> responseData = Xml.GetXMLDataValues(xmlresponse);
+      firmware.Version = GetFirstXmlValue(xmlresponse, "FUSBody/Results/BINARY_SW_VERSION/Data", "FUSBody/Results/LATEST_FW_VERSION/Data", "FUSBody/Put/BINARY_SW_VERSION/Data");
+      firmware.Model = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_MODEL_NAME/Data", "FUSBody/Put/DEVICE_MODEL_NAME/Data");
       firmware.DisplayName = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/DEVICE_MODEL_DISPLAYNAME/Data", (string) null, (string) null);
-      firmware.OS = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LATEST_OS_VERSION/Data", (string) null, (string) null);
+      firmware.OS = GetFirstDataValue(responseData, "LATEST_OS_VERSION", "BINARY_OS_VERSION", "OS_VERSION", "ANDROID_VERSION", "ANDROID_OS_VERSION", "DEVICE_OS_VERSION", "DEVICE_PLATFORM_VERSION");
+      if (string.IsNullOrEmpty(firmware.OS))
+        firmware.OS = GetFirstDataValueContaining(responseData, "OS", "ANDROID");
       firmware.LastModified = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LAST_MODIFIED/Data", (string) null, (string) null);
       firmware.Filename = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_NAME/Data", (string) null, (string) null);
       firmware.Size = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_BYTE_SIZE/Data", (string) null, (string) null);
@@ -100,12 +103,15 @@ namespace SamFirm
         firmware.CRC = ((IEnumerable<byte>) BitConverter.GetBytes(Convert.ToUInt32(xmlValue))).Reverse<byte>().ToArray<byte>();
       firmware.Model_Type = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/DEVICE_MODEL_TYPE/Data", (string) null, (string) null);
       firmware.Path = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/MODEL_PATH/Data", (string) null, (string) null);
-      firmware.Region = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/DEVICE_LOCAL_CODE/Data", (string) null, (string) null);
-      firmware.BinaryNature = int.Parse(Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_NATURE/Data", (string) null, (string) null));
-      if (Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_FACTORY/Data", (string) null, (string) null) == "1")
-        firmware.LogicValueFactory = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_FACTORY/Data", (string) null, (string) null);
-      if (Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_HOME/Data", (string) null, (string) null) == "1")
-        firmware.LogicValueHome = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_HOME/Data", (string) null, (string) null);
+      firmware.Region = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_LOCAL_CODE/Data", "FUSBody/Put/DEVICE_LOCAL_CODE/Data");
+      int binaryNature;
+      firmware.BinaryNature = int.TryParse(Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_NATURE/Data", (string) null, (string) null), out binaryNature) ? binaryNature : 1;
+      string logicValueFactory = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_FACTORY/Data", (string) null, (string) null);
+      string logicValueHome = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_HOME/Data", (string) null, (string) null);
+      if (Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_FACTORY/Data", (string) null, (string) null) == "1" || !string.IsNullOrEmpty(logicValueFactory))
+        firmware.LogicValueFactory = logicValueFactory;
+      if (Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_HOME/Data", (string) null, (string) null) == "1" || !string.IsNullOrEmpty(logicValueHome))
+        firmware.LogicValueHome = logicValueHome;
       if (!AutoFetch)
       {
         if (pda + "/" + csc + "/" + phone + "/" + pda == firmware.Version)
@@ -122,8 +128,73 @@ namespace SamFirm
         Logger.WriteLog("LogicValue: " + firmware.LogicValueFactory, false);
       else if (!string.IsNullOrEmpty(firmware.LogicValueHome))
         Logger.WriteLog("LogicValue: " + firmware.LogicValueHome, false);
+      LogFirmwareResponseData(responseData);
       Logger.WriteLog("\n", false);
       return firmware;
+    }
+
+    private static string GetFirstXmlValue(string xml, params string[] paths)
+    {
+      foreach (string path in paths)
+      {
+        string value = Xml.GetXMLValue(xml, path, (string)null, (string)null);
+        if (!string.IsNullOrEmpty(value))
+          return value;
+      }
+      return string.Empty;
+    }
+
+    private static string GetFirstDataValue(List<KeyValuePair<string, string>> values, params string[] names)
+    {
+      foreach (string name in names)
+      {
+        foreach (KeyValuePair<string, string> value in values)
+        {
+          if (string.Equals(value.Key, name, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(value.Value))
+            return value.Value;
+        }
+      }
+      return string.Empty;
+    }
+
+    private static string GetFirstDataValueContaining(List<KeyValuePair<string, string>> values, params string[] fragments)
+    {
+      foreach (KeyValuePair<string, string> value in values)
+      {
+        foreach (string fragment in fragments)
+        {
+          if (value.Key.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0 && !string.IsNullOrEmpty(value.Value))
+            return value.Value;
+        }
+      }
+      return string.Empty;
+    }
+
+    private static void LogFirmwareResponseData(List<KeyValuePair<string, string>> values)
+    {
+      if (values.Count == 0)
+        return;
+
+      Logger.WriteLog("Firmware response data:", false);
+      HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+      foreach (KeyValuePair<string, string> value in values)
+      {
+        string key = value.Key;
+        string data = value.Value;
+        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(data))
+          continue;
+
+        string unique = key + "\n" + data;
+        if (!seen.Add(unique))
+          continue;
+
+        Logger.WriteLog("  " + FormatDataName(key) + ": " + data, false);
+      }
+    }
+
+    private static string FormatDataName(string name)
+    {
+      return name.Replace('_', ' ');
     }
 
     public static int Download(

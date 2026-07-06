@@ -9,12 +9,9 @@ namespace SamFirm
     {
       HttpWebRequest httpWebRequest = (HttpWebRequest) WebRequest.Create(requestUriString);
       httpWebRequest.Headers["Cache-Control"] = "no-cache";
-      httpWebRequest.UserAgent = "Kies2.0_FUS";
+      httpWebRequest.UserAgent = "SMART 2.0";
       httpWebRequest.Headers.Add("Authorization", "FUS nonce=\"\", signature=\"\", nc=\"\", type=\"\", realm=\"\"");
-      CookieContainer cookieContainer = new CookieContainer(1);
-      Cookie cookie = new Cookie("JSESSIONID", Web.JSessionID);
-      cookieContainer.Add(new Uri(requestUriString), cookie);
-      httpWebRequest.CookieContainer = cookieContainer;
+      httpWebRequest.CookieContainer = Web.CookieContainer;
       return httpWebRequest;
     }
   }

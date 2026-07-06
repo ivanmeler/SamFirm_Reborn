@@ -166,8 +166,11 @@ label_6:
     {
       if (string.IsNullOrEmpty(xml))
         return 0;
+      string status = Xml.GetXMLValue(xml, "FUSBody/Results/Status", (string) null, (string) null);
+      if (status == "S00")
+        return 200;
       int result;
-      if (int.TryParse(Xml.GetXMLValue(xml, "FUSBody/Results/Status", (string) null, (string) null), out result))
+      if (int.TryParse(status, out result))
         return result;
       return 666;
     }
@@ -184,8 +187,9 @@ label_6:
       {
         int num3 = num2 & 15;
         if (input.Length <= num3 + num1)
-          return string.Empty;
-        stringBuilder.Append(input[num3 + num1]);
+          stringBuilder.Append('.');
+        else
+          stringBuilder.Append(input[num3 + num1]);
       }
       return stringBuilder.ToString();
     }

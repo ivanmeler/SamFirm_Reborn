@@ -1,29 +1,25 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Xml.Linq;
 
 namespace SamFirm
 {
   internal class Xml
   {
-        private static string BinaryInit = @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<FUSMsg>
+    private static string BinaryInit = @"<FUSMsg>
     <FUSHdr>
-        <ProtoVer>1</ProtoVer>
+        <ProtoVer>1.0</ProtoVer>
         <SessionID>0</SessionID>
         <MsgID>1</MsgID>
     </FUSHdr>
     <FUSBody>
         <Put>
-            <CmdID>1</CmdID>
-            <BINARY_FILE_NAME>
+            <BINARY_NAME>
                 <Data>SM-T805_AUT_1_20140929155250_b8l0mvlbba_fac.zip.enc2</Data>
-            </BINARY_FILE_NAME>
-            <BINARY_NATURE>
-                <Data>0</Data>
-            </BINARY_NATURE>
-            <BINARY_VERSION>
+            </BINARY_NAME>
+            <BINARY_SW_VERSION>
                 <Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>
-            </BINARY_VERSION>
+            </BINARY_SW_VERSION>
             <DEVICE_LOCAL_CODE>
                 <Data>AUT</Data>
             </DEVICE_LOCAL_CODE>
@@ -34,17 +30,12 @@ namespace SamFirm
                 <Data>805XXU1ANFU1ANXX</Data>
             </LOGIC_CHECK>
         </Put>
-        <Get>
-            <CmdID>2</CmdID>
-            <LATEST_FW_VERSION/>
-        </Get>
     </FUSBody>
 </FUSMsg>";
 
-        private static string LatestVer = @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<FUSMsg>
+    private static string LatestVer = @"<FUSMsg>
     <FUSHdr>
-        <ProtoVer>1</ProtoVer>
+        <ProtoVer>1.0</ProtoVer>
         <SessionID>0</SessionID>
         <MsgID>1</MsgID>
     </FUSHdr>
@@ -52,56 +43,30 @@ namespace SamFirm
         <Put>
             <CmdID>1</CmdID>
             <ACCESS_MODE>
-                <Data>2</Data>
+                <Data>1</Data>
             </ACCESS_MODE>
             <BINARY_NATURE>
-                <Data>0</Data>
+                <Data>1</Data>
             </BINARY_NATURE>
-            <CLIENT_LANGUAGE>
-                <Type>String</Type>
-                <Type>ISO 3166-1-alpha-3</Type>
-                <Data>1033</Data>
-            </CLIENT_LANGUAGE>
-            <CLIENT_PRODUCT>
-                <Data>Smart Switch</Data>
-            </CLIENT_PRODUCT>
-            <CLIENT_VERSION>
-                <Data>4.3.23123_1</Data>
-            </CLIENT_VERSION>
-            <DEVICE_CONTENTS_DATA_VERSION>
-                <Data>T805XXU1ANF6</Data>
-            </DEVICE_CONTENTS_DATA_VERSION>
-            <DEVICE_CSC_CODE2_VERSION>
-                <Data>T805AUT1ANF1</Data>
-            </DEVICE_CSC_CODE2_VERSION>
-            <DEVICE_FW_VERSION>
-                <Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>
-            </DEVICE_FW_VERSION>
-            <DEVICE_IMEI_PUSH>
-                <Data>00000000000000</Data>
-            </DEVICE_IMEI_PUSH>
-            <DEVICE_LOCAL_CODE>
-                <Data>AUT</Data>
-            </DEVICE_LOCAL_CODE>
-            <DEVICE_MODEL_NAME>
-                <Data>SM-T805</Data>
-            </DEVICE_MODEL_NAME>
-            <DEVICE_PDA_CODE1_VERSION>
-                <Data>T805XXU1ANE6</Data>
-            </DEVICE_PDA_CODE1_VERSION>
-            <DEVICE_PHONE_FONT_VERSION>
-                <Data>T805XXU1ANF6</Data>
-            </DEVICE_PHONE_FONT_VERSION>
-            <DEVICE_PLATFORM>
-                <Data>Android</Data>
-            </DEVICE_PLATFORM>
+            <REQUEST_TYPE>
+                <Data>2</Data>
+            </REQUEST_TYPE>
             <LOGIC_CHECK>
                 <Data>805XXU1ANFU1ANXX</Data>
             </LOGIC_CHECK>
+            <BINARY_SW_VERSION>
+                <Data>T805XXU1ANFB/T805AUT1ANF1/T805XXU1ANF6/T805XXU1ANFB</Data>
+            </BINARY_SW_VERSION>
+            <BINARY_LOCAL_CODE>
+                <Data>AUT</Data>
+            </BINARY_LOCAL_CODE>
+            <BINARY_MODEL_NAME>
+                <Data>SM-T805</Data>
+            </BINARY_MODEL_NAME>
         </Put>
         <Get>
             <CmdID>2</CmdID>
-            <LATEST_FW_VERSION/>
+            <BINARY_SW_VERSION/>
         </Get>
     </FUSBody>
 </FUSMsg>";
@@ -112,34 +77,58 @@ namespace SamFirm
       string attributename = null,
       string attributevalue = null)
     {
+      if (string.IsNullOrEmpty(xml) || string.IsNullOrEmpty(element))
+        return string.Empty;
+
       XDocument xdocument = XDocument.Parse(xml);
       string[] strArray = element.Split('/');
       XElement xelement = xdocument.Root;
       for (int index = 0; index < strArray.Length; ++index)
       {
+        if (xelement == null)
+          return string.Empty;
+
         if (index < strArray.Length - 1)
         {
-          xelement = xelement.Element((XName) strArray[index]);
+          xelement = xelement.Element((XName)strArray[index]);
         }
         else
         {
-          foreach (XElement element1 in xelement.Elements((XName) strArray[index]))
+          XElement found = null;
+          foreach (XElement element1 in xelement.Elements((XName)strArray[index]))
           {
             if (attributename == null)
             {
-              xelement = element1;
+              found = element1;
               break;
             }
-            XAttribute xattribute = element1.Attribute((XName) attributename);
-            if (xattribute != null && (attributevalue == null || !(xattribute.Value != attributevalue)))
+            XAttribute xattribute = element1.Attribute((XName)attributename);
+            if (xattribute != null && (attributevalue == null || xattribute.Value == attributevalue))
             {
-              xelement = element1;
+              found = element1;
               break;
             }
           }
+          xelement = found;
         }
       }
-      return xelement.Value;
+      return xelement?.Value ?? string.Empty;
+    }
+
+    public static List<KeyValuePair<string, string>> GetXMLDataValues(string xml)
+    {
+      List<KeyValuePair<string, string>> values = new List<KeyValuePair<string, string>>();
+      if (string.IsNullOrEmpty(xml))
+        return values;
+
+      XDocument xdocument = XDocument.Parse(xml);
+      foreach (XElement data in xdocument.Descendants((XName)"Data"))
+      {
+        if (data.Parent == null || string.IsNullOrEmpty(data.Value))
+          continue;
+        values.Add(new KeyValuePair<string, string>(data.Parent.Name.LocalName, data.Value));
+      }
+      return values;
     }
 
     public static string GetXmlBinaryInform(
@@ -152,47 +141,13 @@ namespace SamFirm
       string dataver,
       bool BinaryNature = false)
     {
+      string firmwareVersion = pdaver + "/" + cscver + "/" + phonever + "/" + dataver;
       XDocument xdocument = XDocument.Parse(SamFirm.Xml.LatestVer);
-      XElement xelement = xdocument.Element((XName) "FUSMsg").Element((XName) "FUSBody").Element((XName) "Put");
-      xelement.Element((XName) "DEVICE_MODEL_NAME").Element((XName) "Data").Value = model;
-      xelement.Element((XName) "DEVICE_LOCAL_CODE").Element((XName) "Data").Value = region;
-      xelement.Element((XName) "DEVICE_IMEI_PUSH").Element((XName) "Data").Value = imei;
-      xelement.Element((XName) "DEVICE_CONTENTS_DATA_VERSION").Element((XName) "Data").Value = dataver;
-      xelement.Element((XName) "DEVICE_CSC_CODE2_VERSION").Element((XName) "Data").Value = cscver;
-      xelement.Element((XName) "DEVICE_PDA_CODE1_VERSION").Element((XName) "Data").Value = pdaver;
-      xelement.Element((XName) "DEVICE_PHONE_FONT_VERSION").Element((XName) "Data").Value = phonever;
-      xelement.Element((XName) "DEVICE_FW_VERSION").Element((XName) "Data").Value = pdaver + "/" + cscver + "/" + phonever + "/" + dataver;
-      xelement.Element((XName) "BINARY_NATURE").Element((XName) "Data").Value = Convert.ToInt32(BinaryNature).ToString();
-      //xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(pdaver + "/" + cscver + "/" + phonever + "/" + dataver, Web.Nonce);
-      xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(pdaver + "/" + cscver + "/" + phonever + "/" + dataver, Web.Nonce);
-
-      //hardcode EUX as Germany and EUY as Republic of Serbia
-      if (region == "EUX")
-      {
-        xelement.Add(
-            new XElement("DEVICE_AID_CODE",
-                new XElement("Data", region)),
-            new XElement("DEVICE_CC_CODE",
-                new XElement("Data", "DE")),
-            new XElement("MCC_NUM",
-                new XElement("Data", "262")),
-            new XElement("MNC_NUM",
-                new XElement("Data", "01"))
-        );
-      }
-      else if (region == "EUY")
-      {
-        xelement.Add(
-            new XElement("DEVICE_AID_CODE",
-                new XElement("Data", region)),
-            new XElement("DEVICE_CC_CODE",
-                new XElement("Data", "RS")),
-            new XElement("MCC_NUM",
-                new XElement("Data", "220")),
-            new XElement("MNC_NUM",
-                new XElement("Data", "01"))
-        );
-      }
+      XElement xelement = xdocument.Element((XName)"FUSMsg").Element((XName)"FUSBody").Element((XName)"Put");
+      SetDataValue(xelement, "BINARY_MODEL_NAME", model);
+      SetDataValue(xelement, "BINARY_LOCAL_CODE", region);
+      SetDataValue(xelement, "BINARY_SW_VERSION", firmwareVersion);
+      SetDataValue(xelement, "LOGIC_CHECK", Utility.GetLogicCheck(firmwareVersion, Web.Nonce));
       return xdocument.ToString();
     }
 
@@ -203,13 +158,23 @@ namespace SamFirm
       string model_type)
     {
       XDocument xdocument = XDocument.Parse(SamFirm.Xml.BinaryInit);
-      XElement xelement = xdocument.Element((XName) "FUSMsg").Element((XName) "FUSBody").Element((XName) "Put");
-      xelement.Element((XName) "BINARY_FILE_NAME").Element((XName) "Data").Value = file;
-      xelement.Element((XName) "BINARY_VERSION").Element((XName) "Data").Value = version;
-      xelement.Element((XName) "DEVICE_LOCAL_CODE").Element((XName) "Data").Value = region;
-      xelement.Element((XName) "DEVICE_MODEL_TYPE").Element((XName) "Data").Value = model_type;
-      xelement.Element((XName) "LOGIC_CHECK").Element((XName) "Data").Value = Utility.GetLogicCheck(file, Web.Nonce);
+      XElement xelement = xdocument.Element((XName)"FUSMsg").Element((XName)"FUSBody").Element((XName)"Put");
+      SetDataValue(xelement, "BINARY_NAME", file);
+      SetDataValue(xelement, "BINARY_SW_VERSION", version);
+      SetDataValue(xelement, "DEVICE_LOCAL_CODE", region);
+      SetDataValue(xelement, "DEVICE_MODEL_TYPE", model_type);
+
+      string checkInput = file;
+      if ((file.EndsWith(".zip.enc2") || file.EndsWith(".zip.enc4")) && file.Length >= 25)
+        checkInput = file.Substring(file.Length - 25, 16);
+
+      SetDataValue(xelement, "LOGIC_CHECK", Utility.GetLogicCheck(checkInput, Web.Nonce));
       return xdocument.ToString();
+    }
+
+    private static void SetDataValue(XElement parent, string name, string value)
+    {
+      parent.Element((XName)name).Element((XName)"Data").Value = value;
     }
   }
 }

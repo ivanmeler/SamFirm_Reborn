@@ -14,9 +14,10 @@ namespace SamFirm
         WebResponse response = wr.GetResponse();
         if (((IEnumerable<string>) response.Headers.AllKeys).Contains<string>("Set-Cookie"))
           Web.JSessionID = WebRequestExtension.seal(response.Headers[HttpResponseHeader.SetCookie], "JSESSIONID");
-        if (((IEnumerable<string>) response.Headers.AllKeys).Contains<string>("NONCE")) 
-        { 
-          Web.EncryptedNonce = response.Headers["NONCE"];
+        string nonce = response.Headers["NONCE"] ?? response.Headers["nonce"];
+        if (!string.IsNullOrEmpty(nonce))
+        {
+          Web.EncryptedNonce = nonce;
           Web.DecryptedNonce = KiesAuth.DecryptNonce(Web.EncryptedNonce);
           Web.Auth = KiesAuth.GetAuth(Web.DecryptedNonce);
         }
