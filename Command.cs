@@ -194,6 +194,17 @@ namespace SamFirm
 
     private static string FormatDataName(string name)
     {
+      switch (name)
+      {
+        case "DEVICE_BOOT_FILE":
+          return "DEVICE BOOTLOADER FILE";
+        case "DEVICE_PDA_CODE1_FILE":
+          return "DEVICE SYSTEM FILE";
+        case "DEVICE_PHONE_FONT_FILE":
+          return "DEVICE MODEM FILE";
+        case "DEVICE_CSC_FILE":
+          return "DEVICE CSC FILE";
+      }
       return name.Replace('_', ' ');
     }
 

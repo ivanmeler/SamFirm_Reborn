@@ -381,16 +381,36 @@ label_15:
           this.ControlsEnabled(false);
           this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = false)));
           if (this.destinationfile.EndsWith(".enc2"))
+          {
+            Logger.WriteLog("Using enc2 decrypt key.", false);
             Crypto.SetDecryptKey(this.FW.Region, this.FW.Model, this.FW.Version);
+          }
           else if (this.destinationfile.EndsWith(".enc4"))
           {
+            Logger.WriteLog("Using enc4 decrypt key.", false);
             if (this.FW.BinaryNature == 1)
               Crypto.SetDecryptKey(this.FW.Version, this.FW.LogicValueFactory);
             else
               Crypto.SetDecryptKey(this.FW.Version, this.FW.LogicValueHome);
           }
           string outputDirectory = Path.Combine(Path.GetDirectoryName(this.destinationfile), Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(this.destinationfile)));
-          if (Crypto.DecryptAndUnzip(this.destinationfile, outputDirectory, true) == 0)
+          Logger.WriteLog("Input file: " + this.destinationfile, false);
+          Logger.WriteLog("Output directory: " + outputDirectory, false);
+          Logger.WriteLog("Input size: " + new System.IO.FileInfo(this.destinationfile).Length + " bytes", false);
+          Logger.WriteLog("Starting decrypt/unzip operation...", false);
+          int decryptResult;
+          try
+          {
+            decryptResult = Crypto.DecryptAndUnzip(this.destinationfile, outputDirectory, true);
+          }
+          catch (Exception ex)
+          {
+            decryptResult = 3;
+            Logger.WriteLog("Error decrypting file: " + ex.Message, false);
+            Logger.WriteLog(ex.ToString(), false);
+          }
+          Logger.WriteLog("Decrypt/unzip result code: " + decryptResult, false);
+          if (decryptResult == 0)
           {
             CmdLine.SaveMeta(FW, Path.Combine(outputDirectory, "FirmwareInfo.txt"));
 //            File.WriteAllText(Path.Combine(outputDirectory, "FirmwareInfo,txt"), $@"
@@ -527,7 +547,8 @@ label_15:
             this.model_lbl.Text = "Model";
             // 
             // download_button
-            // 
+            //
+            this.download_button.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.download_button.Location = new System.Drawing.Point(99, 144);
             this.download_button.Margin = new System.Windows.Forms.Padding(0);
             this.download_button.Name = "download_button";
@@ -538,7 +559,8 @@ label_15:
             this.download_button.Click += new System.EventHandler(this.download_button_Click);
             // 
             // log_textbox
-            // 
+            //
+            this.log_textbox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.log_textbox.Location = new System.Drawing.Point(16, 371);
             this.log_textbox.Margin = new System.Windows.Forms.Padding(4);
             this.log_textbox.Name = "log_textbox";
@@ -648,7 +670,8 @@ label_15:
             this.file_lbl.Text = "File";
             // 
             // file_textbox
-            // 
+            //
+            this.file_textbox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.file_textbox.Location = new System.Drawing.Point(100, 22);
             this.file_textbox.Margin = new System.Windows.Forms.Padding(4);
             this.file_textbox.Name = "file_textbox";
@@ -668,7 +691,8 @@ label_15:
             this.version_lbl.Text = "Version";
             // 
             // version_textbox
-            // 
+            //
+            this.version_textbox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.version_textbox.Location = new System.Drawing.Point(100, 54);
             this.version_textbox.Margin = new System.Windows.Forms.Padding(4);
             this.version_textbox.Name = "version_textbox";
@@ -780,7 +804,8 @@ label_15:
             this.binary_lbl.Text = "Binary Nature";
             // 
             // progressBar
-            // 
+            //
+            this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.progressBar.Location = new System.Drawing.Point(100, 180);
             this.progressBar.Margin = new System.Windows.Forms.Padding(4);
             this.progressBar.Name = "progressBar";
@@ -788,7 +813,8 @@ label_15:
             this.progressBar.TabIndex = 18;
             // 
             // decrypt_button
-            // 
+            //
+            this.decrypt_button.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.decrypt_button.Enabled = false;
             this.decrypt_button.Location = new System.Drawing.Point(251, 144);
             this.decrypt_button.Margin = new System.Windows.Forms.Padding(4);
@@ -800,7 +826,8 @@ label_15:
             this.decrypt_button.Click += new System.EventHandler(this.decrypt_button_Click);
             // 
             // groupBox2
-            // 
+            //
+            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.lbl_transferred);
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.lbl_speed);
@@ -881,7 +908,8 @@ label_15:
             this.checkbox_crc.UseVisualStyleBackColor = true;
             // 
             // size_textbox
-            // 
+            //
+            this.size_textbox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.size_textbox.Location = new System.Drawing.Point(100, 86);
             this.size_textbox.Margin = new System.Windows.Forms.Padding(4);
             this.size_textbox.Name = "size_textbox";
@@ -913,8 +941,11 @@ label_15:
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.log_textbox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
+            this.MaximizeBox = true;
+            this.MinimumSize = new System.Drawing.Size(907, 582);
             this.Name = "Form1";
             this.Text = "SamFirm (BornAgain Edition)";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_Close);
