@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -102,8 +103,34 @@ namespace SamFirm
       wr.Headers["Authorization"] = AuthHeaderWithNonce;
       wr.Timeout = 25000;
       wr.ReadWriteTimeout = 25000;
-      if (decryptInline && System.IO.File.Exists(saveTo))
-        System.IO.File.Delete(saveTo);
+      string inlineResumeMarker = saveTo + ".resume";
+      if (decryptInline)
+      {
+        bool canResume = System.IO.File.Exists(saveTo) && System.IO.File.Exists(inlineResumeMarker);
+        if (canResume)
+        {
+          long decryptedLength = new FileInfo(saveTo).Length;
+          if (decryptedLength % 16 != 0)
+          {
+            Logger.WriteLog("Inline download state is incomplete. Restarting download...", false);
+            System.IO.File.Delete(saveTo);
+            System.IO.File.Delete(inlineResumeMarker);
+          }
+          else
+          {
+            Logger.WriteLog("Resuming inline download...", false);
+            wr.AddRange(decryptedLength);
+            bytesTransferred = decryptedLength;
+          }
+        }
+        else
+        {
+          if (System.IO.File.Exists(saveTo))
+            System.IO.File.Delete(saveTo);
+          if (System.IO.File.Exists(inlineResumeMarker))
+            System.IO.File.Delete(inlineResumeMarker);
+        }
+      }
       if (!decryptInline && System.IO.File.Exists(saveTo))
       {
         long length = new FileInfo(saveTo).Length;
@@ -130,6 +157,15 @@ namespace SamFirm
         }
         else
         {
+          // A few CDNs ignore Range. Do not append a full response to a partial package.
+          if (decryptInline && bytesTransferred > 0 && responseFus.StatusCode == HttpStatusCode.OK)
+          {
+            Logger.WriteLog("Server ignored resume request. Restarting inline download...", false);
+            bytesTransferred = 0;
+            System.IO.File.Delete(saveTo);
+            System.IO.File.Delete(inlineResumeMarker);
+          }
+
           long total = long.Parse(responseFus.GetResponseHeader("content-length")) + bytesTransferred;
           if (!System.IO.File.Exists(saveTo) || new FileInfo(saveTo).Length != total)
           {
@@ -139,6 +175,8 @@ namespace SamFirm
             try
             {
               Utility.PreventDeepSleep(Utility.PDSMode.Start);
+              if (decryptInline)
+                System.IO.File.WriteAllText(inlineResumeMarker, "inline");
               using (FileStream output = new FileStream(saveTo, FileMode.Append, FileAccess.Write, FileShare.Read))
               using (ICryptoTransform decryptor = decryptInline ? Crypto.CreateDecryptor() : null)
               {
@@ -214,11 +252,19 @@ namespace SamFirm
                   }
                   output.Write(lastPlain, 0, 16 - padding);
                   output.Flush();
+                  System.IO.File.Delete(inlineResumeMarker);
                 }
               }
             }
             catch (IOException ex)
             {
+              if (ex.InnerException is SocketException ||
+                  ex.Message.IndexOf("transport connection", StringComparison.OrdinalIgnoreCase) >= 0)
+              {
+                Logger.WriteLog("Error: Connection interrupted. Resuming download...", false);
+                Web.SetReconnect();
+                return -1;
+              }
               Logger.WriteLog("Error: Can't access output file " + saveTo, false);
               if (GUI)
                 Web.form.PauseDownload = true;

@@ -50,6 +50,7 @@ namespace SamFirm
     private CheckBox checkbox_manual;
     private CheckBox checkbox_auto;
     private CheckBox checkbox_autodecrypt;
+    private CheckBox checkbox_legacydecrypt;
     private CheckBox checkbox_crc;
     private ToolTip tooltip_binary;
     public Label lbl_speed;
@@ -97,6 +98,8 @@ namespace SamFirm
         this.checkbox_crc.Checked = false;
       if (Settings.ReadSetting<string>("AutoDecrypt").ToLower() == "false")
         this.checkbox_autodecrypt.Checked = false;
+      if (Settings.ReadSetting<string>("LegacyDecrypt").ToLower() == "true")
+        this.checkbox_legacydecrypt.Checked = true;
       this.tooltip_binary.SetToolTip((Control) this.binary_lbl, "Full firmware including PIT file");
       this.tooltip_binary_box.SetToolTip((Control) this.binary_checkbox, "Full firmware including PIT file");
       Logger.WriteLog("SamFirm v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion, false);
@@ -117,6 +120,7 @@ namespace SamFirm
         Settings.SetSetting("BinaryNature", this.binary_checkbox.Checked.ToString());
         Settings.SetSetting("CheckCRC", this.checkbox_crc.Checked.ToString());
         Settings.SetSetting("AutoDecrypt", this.checkbox_autodecrypt.Checked.ToString());
+        Settings.SetSetting("LegacyDecrypt", this.checkbox_legacydecrypt.Checked.ToString());
       }
       catch { }
       this.PauseDownload = true;
@@ -146,7 +150,8 @@ namespace SamFirm
         }
         else
         {
-          bool inlineDecrypt = this.checkbox_autodecrypt.Checked && IsEncryptedFirmware(this.FW.Filename);
+          bool legacyDecrypt = this.checkbox_legacydecrypt.Checked;
+          bool inlineDecrypt = this.checkbox_autodecrypt.Checked && !legacyDecrypt && IsEncryptedFirmware(this.FW.Filename);
           string downloadFilename = inlineDecrypt ? Path.GetFileNameWithoutExtension(this.FW.Filename) : this.FW.Filename;
           if (e.GetType() != typeof (Form1.DownloadEventArgs) || !((Form1.DownloadEventArgs) e).isReconnect)
           {
@@ -246,7 +251,7 @@ namespace SamFirm
                 else
                 {
                   this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = true)));
-                  if (this.checkbox_autodecrypt.Checked && IsEncryptedFirmware(this.destinationfile))
+                  if ((legacyDecrypt || this.checkbox_autodecrypt.Checked) && IsEncryptedFirmware(this.destinationfile))
                     this.decrypt_button_Click(o, (EventArgs) null);
                 }
               }
@@ -365,7 +370,20 @@ label_15:
         this.phone_textbox.Enabled = Enabled;
       })));
       this.checkbox_autodecrypt.Invoke((Delegate)((Action)(() => this.checkbox_autodecrypt.Enabled = Enabled)));
+      this.checkbox_legacydecrypt.Invoke((Delegate)((Action)(() => this.checkbox_legacydecrypt.Enabled = Enabled)));
       this.checkbox_crc.Invoke((Delegate)((Action)(() => this.checkbox_crc.Enabled = Enabled)));
+    }
+
+    private void checkbox_autodecrypt_CheckedChanged(object sender, EventArgs e)
+    {
+      if (this.checkbox_autodecrypt.Checked)
+        this.checkbox_legacydecrypt.Checked = false;
+    }
+
+    private void checkbox_legacydecrypt_CheckedChanged(object sender, EventArgs e)
+    {
+      if (this.checkbox_legacydecrypt.Checked)
+        this.checkbox_autodecrypt.Checked = false;
     }
 
     private void decrypt_button_Click(object sender, EventArgs e)
@@ -517,6 +535,7 @@ label_15:
             this.label1 = new System.Windows.Forms.Label();
             this.lbl_speed = new System.Windows.Forms.Label();
             this.checkbox_autodecrypt = new System.Windows.Forms.CheckBox();
+            this.checkbox_legacydecrypt = new System.Windows.Forms.CheckBox();
             this.checkbox_crc = new System.Windows.Forms.CheckBox();
             this.size_textbox = new System.Windows.Forms.TextBox();
             this.size_lbl = new System.Windows.Forms.Label();
@@ -821,6 +840,7 @@ label_15:
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.lbl_speed);
             this.groupBox2.Controls.Add(this.checkbox_autodecrypt);
+            this.groupBox2.Controls.Add(this.checkbox_legacydecrypt);
             this.groupBox2.Controls.Add(this.checkbox_crc);
             this.groupBox2.Controls.Add(this.size_textbox);
             this.groupBox2.Controls.Add(this.size_lbl);
@@ -875,20 +895,33 @@ label_15:
             this.checkbox_autodecrypt.AutoSize = true;
             this.checkbox_autodecrypt.Checked = true;
             this.checkbox_autodecrypt.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkbox_autodecrypt.Location = new System.Drawing.Point(252, 118);
+            this.checkbox_autodecrypt.Location = new System.Drawing.Point(130, 118);
             this.checkbox_autodecrypt.Margin = new System.Windows.Forms.Padding(4);
             this.checkbox_autodecrypt.Name = "checkbox_autodecrypt";
             this.checkbox_autodecrypt.Size = new System.Drawing.Size(158, 20);
             this.checkbox_autodecrypt.TabIndex = 12;
             this.checkbox_autodecrypt.Text = "Decrypt inline";
             this.checkbox_autodecrypt.UseVisualStyleBackColor = true;
+            this.checkbox_autodecrypt.CheckedChanged += new System.EventHandler(this.checkbox_autodecrypt_CheckedChanged);
+            //
+            // checkbox_legacydecrypt
+            //
+            this.checkbox_legacydecrypt.AutoSize = true;
+            this.checkbox_legacydecrypt.Location = new System.Drawing.Point(300, 118);
+            this.checkbox_legacydecrypt.Margin = new System.Windows.Forms.Padding(4);
+            this.checkbox_legacydecrypt.Name = "checkbox_legacydecrypt";
+            this.checkbox_legacydecrypt.Size = new System.Drawing.Size(165, 20);
+            this.checkbox_legacydecrypt.TabIndex = 13;
+            this.checkbox_legacydecrypt.Text = "Decrypt after download";
+            this.checkbox_legacydecrypt.UseVisualStyleBackColor = true;
+            this.checkbox_legacydecrypt.CheckedChanged += new System.EventHandler(this.checkbox_legacydecrypt_CheckedChanged);
             // 
             // checkbox_crc
             // 
             this.checkbox_crc.AutoSize = true;
             this.checkbox_crc.Checked = true;
             this.checkbox_crc.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkbox_crc.Location = new System.Drawing.Point(100, 118);
+            this.checkbox_crc.Location = new System.Drawing.Point(8, 118);
             this.checkbox_crc.Margin = new System.Windows.Forms.Padding(4);
             this.checkbox_crc.Name = "checkbox_crc";
             this.checkbox_crc.Size = new System.Drawing.Size(112, 20);

@@ -14,6 +14,7 @@ namespace SamFirm
     private static string folder = string.Empty;
     private static bool binary = false;
     private static bool autodecrypt = true;
+    private static bool legacyDecrypt = false;
     private static bool unzip = true;
     private static string metafile = string.Empty;
     private static string fwdest = string.Empty;
@@ -122,6 +123,7 @@ namespace SamFirm
         return 2;
       dfw = fw;
       bool inlineDecrypt = CmdLine.autodecrypt &&
+        !CmdLine.legacyDecrypt &&
         (fw.Filename.EndsWith(".enc2", StringComparison.OrdinalIgnoreCase) || fw.Filename.EndsWith(".enc4", StringComparison.OrdinalIgnoreCase));
       CmdLine.file = Path.Combine(CmdLine.folder, inlineDecrypt ? Path.GetFileNameWithoutExtension(fw.Filename) : fw.Filename);
       Logger.WriteLog("Downloading...\n", false);
@@ -235,7 +237,7 @@ namespace SamFirm
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data] [-meta metafile]", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc4] -version [pda/csc/phone/data] -logicValue [logicValue] [-meta metafile]", false);
       Logger.WriteLog("\nDownloading:", false);
-      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt | -nodecrypt] [-nozip] [-meta metafile]", false);
+      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt | -legacydecrypt | -nodecrypt] [-nozip] [-meta metafile]", false);
       Logger.WriteLog("     Firmware is decrypted while downloading by default; use -nodecrypt to keep the encrypted package.", false);
     }
 
@@ -319,10 +321,17 @@ namespace SamFirm
           case "-autodecrypt":
             --index1;
             CmdLine.autodecrypt = true;
+            CmdLine.legacyDecrypt = false;
+            break;
+          case "-legacydecrypt":
+            --index1;
+            CmdLine.autodecrypt = true;
+            CmdLine.legacyDecrypt = true;
             break;
           case "-nodecrypt":
             --index1;
             CmdLine.autodecrypt = false;
+            CmdLine.legacyDecrypt = false;
             break;
           case "-nozip":
             --index1;
