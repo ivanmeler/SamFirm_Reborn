@@ -10,7 +10,6 @@ namespace SamFirm
     private static string file = string.Empty;
     private static string model = string.Empty;
     private static string region = string.Empty;
-    private static string imei = string.Empty;
     private static string logicValue = string.Empty;
     private static string folder = string.Empty;
     private static bool binary = false;
@@ -231,13 +230,13 @@ namespace SamFirm
     {
       Logger.WriteLog("Usage:\n", false);
       Logger.WriteLog("Update check:", false);
-      Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-binary] [-imei [imei or serial number]]", false);
+      Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-binary]", false);
       Logger.WriteLog("\nDecrypting:", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data] [-meta metafile]", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc4] -version [pda/csc/phone/data] -logicValue [logicValue] [-meta metafile]", false);
       Logger.WriteLog("\nDownloading:", false);
-      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt | -nodecrypt] [-nozip] [-meta metafile] [-imei [imei or serial number]]", false);
-      Logger.WriteLog("     Firmware is decrypted and extracted by default; use -nodecrypt to keep the encrypted package.", false);
+      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt | -nodecrypt] [-nozip] [-meta metafile]", false);
+      Logger.WriteLog("     Firmware is decrypted while downloading by default; use -nodecrypt to keep the encrypted package.", false);
     }
 
     public static void SaveMeta(Command.Firmware fw, string metafile)
@@ -309,9 +308,6 @@ namespace SamFirm
             break;
           case "-region":
             CmdLine.region = args[index1].ToUpper();
-            break;
-          case "-imei":
-            CmdLine.imei = args[index1].ToUpper();
             break;
           case "-model":
             CmdLine.model = args[index1];

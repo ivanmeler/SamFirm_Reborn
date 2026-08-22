@@ -10,7 +10,7 @@ Usage:
 
 Update check:
      SamFirm.exe -c -model [device model] -region [region code]
-                [-version [pda/csc/phone/data]] [-binary] [-imei [Imei or Serial number]]
+                [-version [pda/csc/phone/data]] [-binary]
 
 Decrypting:
      SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data] [-meta metafile]
@@ -20,11 +20,10 @@ Downloading:
      SamFirm.exe -model [device model] -region [region code]
                 [-version [pda/csc/phone/data]] [-folder [output folder]]
                 [-binary] [-autodecrypt | -nodecrypt] [-nozip] [-meta metafile]
-                [-imei [Imei or Serial number]]
 
-IMEI/serial is optional. This also supports Samsung wearable models. With
-decryption enabled (the default), encrypted firmware is decrypted while it is
-downloaded. The GUI saves the decrypted firmware as a `.zip`; it does not
-extract it automatically. Use `-nodecrypt` to keep the encrypted package, or
-`-nozip` to keep the decrypted package without extracting it in console mode.
+Samsung wearable models are supported. With decryption enabled (the default),
+encrypted firmware is decrypted while it is downloaded. The GUI saves the
+decrypted firmware as a `.zip`; it does not extract it automatically. Use
+`-nodecrypt` to keep the encrypted package, or `-nozip` to keep the decrypted
+package without extracting it in console mode.
                 
