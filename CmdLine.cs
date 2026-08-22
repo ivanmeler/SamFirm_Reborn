@@ -14,7 +14,7 @@ namespace SamFirm
     private static string logicValue = string.Empty;
     private static string folder = string.Empty;
     private static bool binary = false;
-    private static bool autodecrypt = false;
+    private static bool autodecrypt = true;
     private static bool unzip = true;
     private static string metafile = string.Empty;
     private static string fwdest = string.Empty;
@@ -36,12 +36,12 @@ namespace SamFirm
       int num = -1;
       if (!string.IsNullOrEmpty(CmdLine.file))
       {
-        if (!string.IsNullOrEmpty(CmdLine.region) && !string.IsNullOrEmpty(CmdLine.imei) && !string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.version))
+        if (!string.IsNullOrEmpty(CmdLine.region) && !string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.version))
           num = CmdLine.DoDecrypt();
         else if (!string.IsNullOrEmpty(CmdLine.logicValue) && !string.IsNullOrEmpty(CmdLine.version))
           num = CmdLine.DoDecrypt();
       }
-      else if (!string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.imei) && !string.IsNullOrEmpty(CmdLine.region))
+      else if (!string.IsNullOrEmpty(CmdLine.model) && !string.IsNullOrEmpty(CmdLine.region))
         num = !CmdLine.checkonly ? CmdLine.DoDownload() : CmdLine.DoCheck();
       if (num == -1)
       {
@@ -98,12 +98,12 @@ namespace SamFirm
       Command.Firmware firmware;
       if (string.IsNullOrEmpty(CmdLine.version))
       {
-        firmware = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.binary);
+        firmware = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.binary);
         if (firmware.FetchAttempts == 0)
           return 5;
       }
       else
-        firmware = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.version, CmdLine.binary, false);
+        firmware = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.version, CmdLine.binary, false);
       return firmware.Version == null ? 2 : 0;
     }
 
@@ -113,16 +113,18 @@ namespace SamFirm
       Command.Firmware fw;
       if (string.IsNullOrEmpty(CmdLine.version))
       {
-        fw = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.binary);
+        fw = Command.UpdateCheckAuto(CmdLine.model, CmdLine.region, CmdLine.binary);
         if (fw.FetchAttempts == 0)
           return 5;
       }
       else
-        fw = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.imei, CmdLine.version, CmdLine.binary, false);
+        fw = Command.UpdateCheck(CmdLine.model, CmdLine.region, CmdLine.version, CmdLine.binary, false);
       if (fw.Version == null)
         return 2;
       dfw = fw;
-      CmdLine.file = Path.Combine(CmdLine.folder, fw.Filename);
+      bool inlineDecrypt = CmdLine.autodecrypt &&
+        (fw.Filename.EndsWith(".enc2", StringComparison.OrdinalIgnoreCase) || fw.Filename.EndsWith(".enc4", StringComparison.OrdinalIgnoreCase));
+      CmdLine.file = Path.Combine(CmdLine.folder, inlineDecrypt ? Path.GetFileNameWithoutExtension(fw.Filename) : fw.Filename);
       Logger.WriteLog("Downloading...\n", false);
       CmdLine.CreateProgressbar();
       int num1;
@@ -130,7 +132,7 @@ namespace SamFirm
       {
         Utility.ReconnectCmdLine();
         Utility.ReconnectDownload = false;
-        num1 = Command.Download(fw.Path, fw.Filename, fw.Version, fw.Region, fw.Model_Type, CmdLine.file, fw.Size, false);
+        num1 = Command.Download(fw.Path, fw.Filename, fw.Version, fw.Region, fw.Model_Type, CmdLine.file, fw.Size, false, inlineDecrypt, fw.Model, fw.BinaryNature == 1 ? fw.LogicValueFactory : fw.LogicValueHome);
       }
       while (Utility.ReconnectDownload);
       if (num1 != 200 && num1 != 206)
@@ -138,7 +140,7 @@ namespace SamFirm
         Logger.WriteLog("Error: " + (object) num1, false);
         return 4;
       }
-      if (CmdLine.autodecrypt)
+      if (CmdLine.autodecrypt && !inlineDecrypt)
       {
         if (CmdLine.file.EndsWith(".enc2"))
           Crypto.SetDecryptKey(fw.Region, fw.Model, fw.Version);
@@ -161,6 +163,20 @@ namespace SamFirm
         //  File.Delete(CmdLine.fwdest);
         //  return 3;
         //}
+      }
+      else if (inlineDecrypt)
+      {
+        if (CmdLine.unzip)
+        {
+          CmdLine.fwdest = Path.Combine(Path.GetDirectoryName(CmdLine.file), Path.GetFileNameWithoutExtension(CmdLine.file));
+          Logger.WriteLog("\nExtracting decrypted firmware to " + CmdLine.fwdest + "...", false);
+          if (Crypto.Unzip(CmdLine.file, CmdLine.fwdest, false) != 0)
+            return 3;
+          CmdLine.SaveMeta(fw, Path.Combine(CmdLine.fwdest, "FirmwareInfo.txt"));
+          File.Delete(CmdLine.file);
+        }
+        else if (!string.IsNullOrEmpty(CmdLine.metafile))
+          CmdLine.SaveMeta(fw, CmdLine.metafile);
       }
       else
       {
@@ -215,12 +231,13 @@ namespace SamFirm
     {
       Logger.WriteLog("Usage:\n", false);
       Logger.WriteLog("Update check:", false);
-      Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code] -imei [imei or serial number]\n                [-version [pda/csc/phone/data]] [-binary]", false);
+      Logger.WriteLog("     SamFirm.exe -c -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-binary] [-imei [imei or serial number]]", false);
       Logger.WriteLog("\nDecrypting:", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc2] -version [pda/csc/phone/data] [-meta metafile]", false);
       Logger.WriteLog("     SamFirm.exe -file [path-to-file.zip.enc4] -version [pda/csc/phone/data] -logicValue [logicValue] [-meta metafile]", false);
       Logger.WriteLog("\nDownloading:", false);
-      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code] -imei [imei or serial number]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt] [-nozip] [-meta metafile]", false);
+      Logger.WriteLog("     SamFirm.exe -model [device model] -region [region code]\n                [-version [pda/csc/phone/data]] [-folder [output folder]]\n                [-binary] [-autodecrypt | -nodecrypt] [-nozip] [-meta metafile] [-imei [imei or serial number]]", false);
+      Logger.WriteLog("     Firmware is decrypted and extracted by default; use -nodecrypt to keep the encrypted package.", false);
     }
 
     public static void SaveMeta(Command.Firmware fw, string metafile)
@@ -265,7 +282,7 @@ namespace SamFirm
 
     private static bool ParseArgs(string[] args)
     {
-      if (args.Length < 4 || args.Length > 12)
+      if (args.Length < 4 || args.Length > 32)
       {
         Logger.WriteLog("Error: Not enough / too many arguments", false);
         return false;
@@ -306,6 +323,10 @@ namespace SamFirm
           case "-autodecrypt":
             --index1;
             CmdLine.autodecrypt = true;
+            break;
+          case "-nodecrypt":
+            --index1;
+            CmdLine.autodecrypt = false;
             break;
           case "-nozip":
             --index1;

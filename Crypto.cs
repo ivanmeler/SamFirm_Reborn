@@ -193,6 +193,46 @@ namespace SamFirm
       return 0;
     }
 
+    public static int Unzip(string decryptedFile, string outputDirectory, bool GUI = true)
+    {
+      try
+      {
+        Directory.CreateDirectory(outputDirectory);
+        string root = Path.GetFullPath(outputDirectory) + Path.DirectorySeparatorChar;
+        using (FileStream input = new FileStream(decryptedFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+        using (ZipInputStream zip = new ZipInputStream(input, 256 * 1024))
+        {
+          ZipEntry entry;
+          byte[] buffer = new byte[256 * 1024];
+          while ((entry = zip.GetNextEntry()) != null)
+          {
+            if (!entry.IsFile)
+              continue;
+
+            string outputFile = Path.GetFullPath(Path.Combine(outputDirectory, entry.Name));
+            if (!outputFile.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+              throw new IOException("Firmware archive contains an invalid path");
+            string directory = Path.GetDirectoryName(outputFile);
+            if (!Directory.Exists(directory))
+              Directory.CreateDirectory(directory);
+            using (FileStream output = new FileStream(outputFile, FileMode.Create, FileAccess.Write, FileShare.Read))
+            {
+              int count;
+              while ((count = zip.Read(buffer, 0, buffer.Length)) > 0)
+                output.Write(buffer, 0, count);
+            }
+            try { File.SetLastWriteTime(outputFile, entry.DateTime); } catch { }
+          }
+        }
+        return 0;
+      }
+      catch (Exception ex)
+      {
+        Logger.WriteLog("Error unzipping firmware: " + ex.Message, false);
+        return 3;
+      }
+    }
+
     private static void ResetProgress(bool GUI)
     {
       Utility.ResetSpeed(0);
@@ -253,6 +293,18 @@ namespace SamFirm
 
       Logger.WriteLog("Decrypt key length: " + Crypto.KEY.Length + " bytes", false);
       return true;
+    }
+
+    public static ICryptoTransform CreateDecryptor()
+    {
+      if (!ValidateDecryptKey())
+        return null;
+
+      RijndaelManaged rijndaelManaged = new RijndaelManaged();
+      rijndaelManaged.Mode = CipherMode.ECB;
+      rijndaelManaged.BlockSize = 128;
+      rijndaelManaged.Padding = PaddingMode.None;
+      return rijndaelManaged.CreateDecryptor(Crypto.KEY, Crypto.IV);
     }
 
     private class ProgressStream : Stream

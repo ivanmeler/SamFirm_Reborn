@@ -9,7 +9,6 @@ namespace SamFirm
     public static Command.Firmware UpdateCheckAuto(
       string model,
       string region,
-      string imei,
       bool BinaryNature)
     {
       int num = 0;
@@ -20,7 +19,7 @@ namespace SamFirm
         if (!string.IsNullOrEmpty(info))
         {
           ++num;
-          firmware = Command.UpdateCheck(model, region, imei, info, BinaryNature, true);
+          firmware = Command.UpdateCheck(model, region, info, BinaryNature, true);
           if (firmware.Version == null)
           {
             if (firmware.ConnectionError)
@@ -39,7 +38,6 @@ namespace SamFirm
     public static Command.Firmware UpdateCheck(
       string model,
       string region,
-      string imei,
       string info,
       bool BinaryNature,
       bool AutoFetch = false)
@@ -52,13 +50,12 @@ namespace SamFirm
       string csc = Utility.InfoExtract(info, "csc");
       string phone = Utility.InfoExtract(info, "phone");
       string data = Utility.InfoExtract(info, "data");
-      return Command.UpdateCheck(model, region, imei, pda, csc, phone, data, BinaryNature, AutoFetch);
+      return Command.UpdateCheck(model, region, pda, csc, phone, data, BinaryNature, AutoFetch);
     }
 
     public static Command.Firmware UpdateCheck(
       string model,
       string region,
-      string imei,
       string pda,
       string csc,
       string phone,
@@ -81,7 +78,7 @@ namespace SamFirm
       //Logger.WriteLog($"Auth signature: {Web.AuthHeaderNoNonce}");
 
       string xmlresponse;
-      int htmlstatus = Web.DownloadBinaryInform(Xml.GetXmlBinaryInform(model, region, imei, pda, csc, phone, data, BinaryNature), out xmlresponse);
+      int htmlstatus = Web.DownloadBinaryInform(Xml.GetXmlBinaryInform(model, region, pda, csc, phone, data, BinaryNature), out xmlresponse);
       if (htmlstatus != 200 || Utility.GetXMLStatusCode(xmlresponse) != 200)
       {
         Logger.WriteLog("Error: Could not send BinaryInform. Status code " + (object) htmlstatus + "/" + (object) Utility.GetXMLStatusCode(xmlresponse), false);
@@ -91,26 +88,36 @@ namespace SamFirm
       List<KeyValuePair<string, string>> responseData = Xml.GetXMLDataValues(xmlresponse);
       firmware.Version = GetFirstXmlValue(xmlresponse, "FUSBody/Results/BINARY_SW_VERSION/Data", "FUSBody/Results/LATEST_FW_VERSION/Data", "FUSBody/Put/BINARY_SW_VERSION/Data");
       firmware.Model = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_MODEL_NAME/Data", "FUSBody/Put/DEVICE_MODEL_NAME/Data");
+      if (string.IsNullOrEmpty(firmware.Model))
+        firmware.Model = model;
       firmware.DisplayName = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/DEVICE_MODEL_DISPLAYNAME/Data", (string) null, (string) null);
       firmware.OS = GetFirstDataValue(responseData, "LATEST_OS_VERSION", "BINARY_OS_VERSION", "OS_VERSION", "ANDROID_VERSION", "ANDROID_OS_VERSION", "DEVICE_OS_VERSION", "DEVICE_PLATFORM_VERSION");
       if (string.IsNullOrEmpty(firmware.OS))
         firmware.OS = GetFirstDataValueContaining(responseData, "OS", "ANDROID");
       firmware.LastModified = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LAST_MODIFIED/Data", (string) null, (string) null);
-      firmware.Filename = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_NAME/Data", (string) null, (string) null);
-      firmware.Size = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_BYTE_SIZE/Data", (string) null, (string) null);
-      string xmlValue = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_CRC/Data", (string) null, (string) null);
+      firmware.Filename = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_NAME/Data", "FUSBody/Put/BINARY_FILE_NAME/Data", "FUSBody/Results/BINARY_NAME/Data");
+      firmware.Size = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_BYTE_SIZE/Data", "FUSBody/Put/BINARY_SIZE/Data", "FUSBody/Results/BINARY_BYTE_SIZE/Data");
+      string xmlValue = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_CRC/Data", "FUSBody/Put/BINARY_CHECKSUM/Data");
       if (!string.IsNullOrEmpty(xmlValue))
-        firmware.CRC = ((IEnumerable<byte>) BitConverter.GetBytes(Convert.ToUInt32(xmlValue))).Reverse<byte>().ToArray<byte>();
-      firmware.Model_Type = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/DEVICE_MODEL_TYPE/Data", (string) null, (string) null);
-      firmware.Path = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/MODEL_PATH/Data", (string) null, (string) null);
+      {
+        uint crc;
+        if (uint.TryParse(xmlValue, out crc) || uint.TryParse(xmlValue, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out crc))
+          firmware.CRC = ((IEnumerable<byte>)BitConverter.GetBytes(crc)).Reverse<byte>().ToArray<byte>();
+      }
+      firmware.Model_Type = GetFirstXmlValue(xmlresponse, "FUSBody/Put/DEVICE_MODEL_TYPE/Data", "FUSBody/Put/BINARY_MODEL_TYPE/Data");
+      if (string.IsNullOrEmpty(firmware.Model_Type))
+        firmware.Model_Type = "0";
+      firmware.Path = GetFirstXmlValue(xmlresponse, "FUSBody/Put/MODEL_PATH/Data", "FUSBody/Put/BINARY_PATH/Data");
       firmware.Region = GetFirstXmlValue(xmlresponse, "FUSBody/Put/BINARY_LOCAL_CODE/Data", "FUSBody/Put/DEVICE_LOCAL_CODE/Data");
+      if (string.IsNullOrEmpty(firmware.Region))
+        firmware.Region = region;
       int binaryNature;
       firmware.BinaryNature = int.TryParse(Xml.GetXMLValue(xmlresponse, "FUSBody/Put/BINARY_NATURE/Data", (string) null, (string) null), out binaryNature) ? binaryNature : 1;
-      string logicValueFactory = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_FACTORY/Data", (string) null, (string) null);
-      string logicValueHome = Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_HOME/Data", (string) null, (string) null);
-      if (Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_FACTORY/Data", (string) null, (string) null) == "1" || !string.IsNullOrEmpty(logicValueFactory))
+      string logicValueFactory = GetFirstXmlValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_FACTORY/Data", "FUSBody/Results/LOGIC_VALUE_FACTORY/Data");
+      string logicValueHome = GetFirstXmlValue(xmlresponse, "FUSBody/Put/LOGIC_VALUE_HOME/Data", "FUSBody/Results/LOGIC_VALUE_HOME/Data");
+      if (GetFirstXmlValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_FACTORY/Data") == "1" || !string.IsNullOrEmpty(logicValueFactory))
         firmware.LogicValueFactory = logicValueFactory;
-      if (Xml.GetXMLValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_HOME/Data", (string) null, (string) null) == "1" || !string.IsNullOrEmpty(logicValueHome))
+      if (GetFirstXmlValue(xmlresponse, "FUSBody/Put/LOGIC_OPTION_HOME/Data") == "1" || !string.IsNullOrEmpty(logicValueHome))
         firmware.LogicValueHome = logicValueHome;
       if (!AutoFetch)
       {
@@ -216,7 +223,10 @@ namespace SamFirm
       string model_type,
       string saveTo,
       string size,
-      bool GUI = true)
+      bool GUI = true,
+      bool decryptInline = false,
+      string model = null,
+      string logicValue = null)
     {
       int nonce = Web.GenerateNonce();
       if (nonce != 200)
@@ -227,7 +237,16 @@ namespace SamFirm
       string xmlresponse;
       int htmlstatus = Web.DownloadBinaryInit(Xml.GetXmlBinaryInit(file, version, region, model_type), out xmlresponse);
       if (htmlstatus == 200 && Utility.GetXMLStatusCode(xmlresponse) == 200)
-        return Web.DownloadBinary(path, file, saveTo, size, GUI);
+      {
+        if (decryptInline)
+        {
+          if (file.EndsWith(".enc2", StringComparison.OrdinalIgnoreCase))
+            Crypto.SetDecryptKey(region, model ?? string.Empty, version);
+          else if (file.EndsWith(".enc4", StringComparison.OrdinalIgnoreCase))
+            Crypto.SetDecryptKey(version, logicValue ?? string.Empty);
+        }
+        return Web.DownloadBinary(path, file, saveTo, size, GUI, decryptInline);
+      }
       Logger.WriteLog("Error: Could not send BinaryInform. Status code " + (object) htmlstatus + "/" + (object) Utility.GetXMLStatusCode(xmlresponse), false);
       Utility.CheckHTMLXMLStatus(htmlstatus, Utility.GetXMLStatusCode(xmlresponse));
       return -1;

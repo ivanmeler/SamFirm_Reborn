@@ -56,8 +56,6 @@ namespace SamFirm
     private Label label1;
     private System.Windows.Forms.SaveFileDialog saveFileDialog1;
     public Label lbl_transferred;
-    private Label imei_lbl;
-    private TextBox imei_textbox;
     private ToolTip tooltip_binary_box;
 
     public Form1()
@@ -84,7 +82,6 @@ namespace SamFirm
         this.region_textbox.Items.AddRange(regions);
       }
       this.region_textbox.Text = Settings.ReadSetting<string>("Region");
-      this.imei_textbox.Text = Settings.ReadSetting<string>("Imei");
       this.pda_textbox.Text = Settings.ReadSetting<string>("PDAVer");
       this.csc_textbox.Text = Settings.ReadSetting<string>("CSCVer");
       this.phone_textbox.Text = Settings.ReadSetting<string>("PHONEVer");
@@ -112,7 +109,6 @@ namespace SamFirm
       {
         Settings.SetSetting("Model", this.model_textbox.Text.ToUpper());
         Settings.SetSetting("Region", this.region_textbox.Text.ToUpper());
-        Settings.SetSetting("Imei", this.imei_textbox.Text.ToUpper());
         Settings.SetSetting("PDAVer", this.pda_textbox.Text);
         Settings.SetSetting("CSCVer", this.csc_textbox.Text);
         Settings.SetSetting("PHONEVer", this.phone_textbox.Text);
@@ -150,14 +146,16 @@ namespace SamFirm
         }
         else
         {
+          bool inlineDecrypt = this.checkbox_autodecrypt.Checked && IsEncryptedFirmware(this.FW.Filename);
+          string downloadFilename = inlineDecrypt ? Path.GetFileNameWithoutExtension(this.FW.Filename) : this.FW.Filename;
           if (e.GetType() != typeof (Form1.DownloadEventArgs) || !((Form1.DownloadEventArgs) e).isReconnect)
           {
             if (this.SaveFileDialog)
             {
-              string str = Path.GetExtension(Path.GetFileNameWithoutExtension(this.FW.Filename)) + Path.GetExtension(this.FW.Filename);
+              string str = Path.GetExtension(Path.GetFileNameWithoutExtension(downloadFilename)) + Path.GetExtension(downloadFilename);
               this.saveFileDialog1.SupportMultiDottedExtensions = true;
               this.saveFileDialog1.OverwritePrompt = false;
-              this.saveFileDialog1.FileName = this.FW.Filename.Replace(str, "");
+              this.saveFileDialog1.FileName = downloadFilename.Replace(str, "");
               this.saveFileDialog1.Filter = "Firmware|*" + str;
               if (this.saveFileDialog1.ShowDialog() != DialogResult.OK)
               {
@@ -184,7 +182,7 @@ namespace SamFirm
               }
             }
             else
-              this.destinationfile = this.FW.Filename;
+              this.destinationfile = downloadFilename;
           }
           Utility.TaskBarProgressState(false);
           BackgroundWorker backgroundWorker = new BackgroundWorker();
@@ -203,7 +201,12 @@ namespace SamFirm
                 Logger.WriteLog("Trying to download " + this.FW.Filename, false);
               else
                 Logger.WriteLog("Trying to download " + this.FW.Filename + " to " + this.destinationfile, false);
-              Command.Download(this.FW.Path, this.FW.Filename, this.FW.Version, this.FW.Region, this.FW.Model_Type, this.destinationfile, this.FW.Size, true);
+              int downloadStatus = Command.Download(this.FW.Path, this.FW.Filename, this.FW.Version, this.FW.Region, this.FW.Model_Type, this.destinationfile, this.FW.Size, true, inlineDecrypt, this.FW.Model, this.FW.BinaryNature == 1 ? this.FW.LogicValueFactory : this.FW.LogicValueHome);
+              if (downloadStatus != 200 && downloadStatus != 206)
+              {
+                Logger.WriteLog("Download failed with status " + downloadStatus, false);
+                goto label_15;
+              }
               if (this.PauseDownload)
               {
                 Logger.WriteLog("Download paused", false);
@@ -217,7 +220,7 @@ namespace SamFirm
               else
               {
                 Logger.WriteLog("Download finished", false);
-                if (this.checkbox_crc.Checked)
+                if (this.checkbox_crc.Checked && !inlineDecrypt)
                 {
                   if (this.FW.CRC == null)
                   {
@@ -236,9 +239,16 @@ namespace SamFirm
                       Logger.WriteLog("Success: CRC match!", false);
                   }
                 }
-                this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = true)));
-                if (this.checkbox_autodecrypt.Checked)
-                  this.decrypt_button_Click(o, (EventArgs) null);
+                if (inlineDecrypt)
+                {
+                  Logger.WriteLog("Decrypted firmware package saved to " + this.destinationfile, false);
+                }
+                else
+                {
+                  this.decrypt_button.Invoke((Delegate)((Action)(() => this.decrypt_button.Enabled = true)));
+                  if (this.checkbox_autodecrypt.Checked && IsEncryptedFirmware(this.destinationfile))
+                    this.decrypt_button_Click(o, (EventArgs) null);
+                }
               }
 label_15:
               if (!Utility.ReconnectDownload)
@@ -262,17 +272,14 @@ label_15:
         Logger.WriteLog("Error: Please specify a model", false);
       else if (string.IsNullOrEmpty(this.region_textbox.Text))
         Logger.WriteLog("Error: Please specify a region", false);
-      else if (string.IsNullOrEmpty(this.imei_textbox.Text))
-        Logger.WriteLog("Error: Please specify an Imei or Serial number", false);
-      else if (this.checkbox_manual.Checked && (string.IsNullOrEmpty(this.imei_textbox.Text) || string.IsNullOrEmpty(this.pda_textbox.Text) || string.IsNullOrEmpty(this.csc_textbox.Text) || string.IsNullOrEmpty(this.phone_textbox.Text)))
+      else if (this.checkbox_manual.Checked && (string.IsNullOrEmpty(this.pda_textbox.Text) || string.IsNullOrEmpty(this.csc_textbox.Text) || string.IsNullOrEmpty(this.phone_textbox.Text)))
       {
-        Logger.WriteLog("Error: Please specify PDA, CSC and Phone version and Imei/Serial or use Auto Method", false);
+        Logger.WriteLog("Error: Please specify PDA, CSC and Phone version or use Auto Method", false);
       }
       else
       {
         string model = this.model_textbox.Text.ToUpper();
         string region = this.region_textbox.Text.ToUpper();
-        string imei = this.imei_textbox.Text.ToUpper();
         BackgroundWorker backgroundWorker = new BackgroundWorker();
         backgroundWorker.DoWork += (DoWorkEventHandler) ((o, _e) =>
         {
@@ -281,7 +288,7 @@ label_15:
             this.SetProgressBar(0, 0);
             this.ControlsEnabled(false);
             Utility.ReconnectDownload = false;
-            this.FW = !this.checkbox_auto.Checked ? Command.UpdateCheck(model, region, imei, this.pda_textbox.Text, this.csc_textbox.Text, this.phone_textbox.Text, this.pda_textbox.Text, this.binary_checkbox.Checked, false) : Command.UpdateCheckAuto(model, region, imei, this.binary_checkbox.Checked);
+            this.FW = !this.checkbox_auto.Checked ? Command.UpdateCheck(model, region, this.pda_textbox.Text, this.csc_textbox.Text, this.phone_textbox.Text, this.pda_textbox.Text, this.binary_checkbox.Checked, false) : Command.UpdateCheckAuto(model, region, this.binary_checkbox.Checked);
             if (!string.IsNullOrEmpty(this.FW.Filename))
             {
               this.file_textbox.Invoke((Delegate)((Action)(() => this.file_textbox.Text = this.FW.Filename)));
@@ -449,6 +456,11 @@ label_15:
       }
     }
 
+    private static bool IsEncryptedFirmware(string filename)
+    {
+      return filename.EndsWith(".enc2", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".enc4", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void checkbox_auto_CheckedChanged(object sender, EventArgs e)
     {
       if (!this.checkbox_manual.Checked && !this.checkbox_auto.Checked)
@@ -493,8 +505,6 @@ label_15:
             this.version_lbl = new System.Windows.Forms.Label();
             this.version_textbox = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.imei_lbl = new System.Windows.Forms.Label();
-            this.imei_textbox = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.checkbox_manual = new System.Windows.Forms.CheckBox();
             this.checkbox_auto = new System.Windows.Forms.CheckBox();
@@ -703,8 +713,6 @@ label_15:
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.imei_lbl);
-            this.groupBox1.Controls.Add(this.imei_textbox);
             this.groupBox1.Controls.Add(this.groupBox3);
             this.groupBox1.Controls.Add(this.checkbox_manual);
             this.groupBox1.Controls.Add(this.checkbox_auto);
@@ -723,25 +731,6 @@ label_15:
             this.groupBox1.TabIndex = 17;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Firmware Info";
-            // 
-            // imei_lbl
-            // 
-            this.imei_lbl.AutoSize = true;
-            this.imei_lbl.Location = new System.Drawing.Point(11, 97);
-            this.imei_lbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.imei_lbl.Name = "imei_lbl";
-            this.imei_lbl.Size = new System.Drawing.Size(71, 16);
-            this.imei_lbl.TabIndex = 19;
-            this.imei_lbl.Text = "Imei/Serial";
-            this.imei_lbl.Click += new System.EventHandler(this.imei_lbl_Click);
-            // 
-            // imei_textbox
-            //
-            this.imei_textbox.Location = new System.Drawing.Point(113, 89);
-            this.imei_textbox.Margin = new System.Windows.Forms.Padding(4);
-            this.imei_textbox.Name = "imei_textbox";
-            this.imei_textbox.Size = new System.Drawing.Size(197, 24);
-            this.imei_textbox.TabIndex = 18;
             // 
             // groupBox3
             // 
@@ -891,7 +880,7 @@ label_15:
             this.checkbox_autodecrypt.Name = "checkbox_autodecrypt";
             this.checkbox_autodecrypt.Size = new System.Drawing.Size(158, 20);
             this.checkbox_autodecrypt.TabIndex = 12;
-            this.checkbox_autodecrypt.Text = "Decrypt automatically";
+            this.checkbox_autodecrypt.Text = "Decrypt inline";
             this.checkbox_autodecrypt.UseVisualStyleBackColor = true;
             // 
             // checkbox_crc
@@ -965,9 +954,5 @@ label_15:
       public bool isReconnect;
     }
 
-        private void imei_lbl_Click(object sender, EventArgs e)
-        {
-
-        }
     }
 }

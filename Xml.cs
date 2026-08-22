@@ -134,7 +134,6 @@ namespace SamFirm
     public static string GetXmlBinaryInform(
       string model,
       string region,
-      string imei,
       string pdaver,
       string cscver,
       string phonever,

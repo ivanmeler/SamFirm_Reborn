@@ -72,14 +72,32 @@ namespace SamFirm
       {
         using (WebClient webClient = new WebClient())
         {
-          string xml = webClient.DownloadString("http://fota-cloud-dn.ospserver.net/firmware/" + region + "/" + model + "/version.xml");
-          return !latest ? Xml.GetXMLValue(xml, "firmware/version/upgrade/value", (string) null, (string) null).ToUpper() : Xml.GetXMLValue(xml, "firmware/version/latest", (string) null, (string) null).ToUpper();
+          string xml = webClient.DownloadString("https://fota-cloud-dn.ospserver.net:443/firmware/" + region + "/" + model + "/version.xml");
+          string version = !latest ? Xml.GetXMLValue(xml, "firmware/version/upgrade/value", (string) null, (string) null) : Xml.GetXMLValue(xml, "firmware/version/latest", (string) null, (string) null);
+          return NormalizeVersion(version).ToUpper();
         }
       }
       catch (Exception ex)
       {
         return string.Empty;
       }
+    }
+
+    private static string NormalizeVersion(string version)
+    {
+      if (string.IsNullOrEmpty(version))
+        return string.Empty;
+
+      string[] parts = version.Split('/');
+      if (parts.Length == 3)
+      {
+        if (string.IsNullOrEmpty(parts[2]))
+          parts[2] = parts[0];
+        return string.Join("/", parts) + "/" + parts[0];
+      }
+      if (parts.Length >= 3 && string.IsNullOrEmpty(parts[2]))
+        parts[2] = parts[0];
+      return string.Join("/", parts);
     }
 
     public static string SamsungFirmwareOrgFetch(string model, string region)

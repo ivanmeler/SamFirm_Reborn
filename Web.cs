@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -92,7 +93,8 @@ namespace SamFirm
       string file,
       string saveTo,
       string size,
-      bool GUI = true)
+      bool GUI = true,
+      bool decryptInline = false)
     {
       long bytesTransferred = 0;
       HttpWebRequest wr = KiesRequest.Create("http://cloud-neofussvr.samsungmobile.com/NF_SmartDownloadBinaryForMass.do?file=" + path + file);
@@ -100,7 +102,9 @@ namespace SamFirm
       wr.Headers["Authorization"] = AuthHeaderWithNonce;
       wr.Timeout = 25000;
       wr.ReadWriteTimeout = 25000;
-      if (System.IO.File.Exists(saveTo))
+      if (decryptInline && System.IO.File.Exists(saveTo))
+        System.IO.File.Delete(saveTo);
+      if (!decryptInline && System.IO.File.Exists(saveTo))
       {
         long length = new FileInfo(saveTo).Length;
         if (long.Parse(size) == length)
@@ -135,21 +139,54 @@ namespace SamFirm
             try
             {
               Utility.PreventDeepSleep(Utility.PDSMode.Start);
-              using (BinaryWriter binaryWriter = new BinaryWriter((Stream)new FileStream(saveTo, FileMode.Append)))
+              using (FileStream output = new FileStream(saveTo, FileMode.Append, FileAccess.Write, FileShare.Read))
+              using (ICryptoTransform decryptor = decryptInline ? Crypto.CreateDecryptor() : null)
               {
+                if (decryptInline && decryptor == null)
+                  return 3;
+                byte[] pendingCipher = new byte[16];
+                int pendingCount = 0;
+                byte[] lastPlain = new byte[16];
+                bool hasLastPlain = false;
+                bool completed = true;
                 int count;
                 do
                 {
                   Utility.PreventDeepSleep(Utility.PDSMode.Continue);
-                  if (GUI)
-                  {
+                    if (GUI)
+                    {
                     if (Web.form.PauseDownload)
+                    {
+                      completed = false;
                       break;
+                    }
                   }
                   bytesTransferred += (long)(count = responseFus.GetResponseStream().Read(buffer, 0, buffer.Length));
                   if (count > 0)
                   {
-                    binaryWriter.Write(buffer, 0, count);
+                    if (!decryptInline)
+                      output.Write(buffer, 0, count);
+                    else
+                    {
+                      int offset = 0;
+                      while (offset < count)
+                      {
+                        int copy = Math.Min(16 - pendingCount, count - offset);
+                        Buffer.BlockCopy(buffer, offset, pendingCipher, pendingCount, copy);
+                        pendingCount += copy;
+                        offset += copy;
+                        if (pendingCount == 16)
+                        {
+                          byte[] plain = new byte[16];
+                          decryptor.TransformBlock(pendingCipher, 0, 16, plain, 0);
+                          if (hasLastPlain)
+                            output.Write(lastPlain, 0, lastPlain.Length);
+                          Buffer.BlockCopy(plain, 0, lastPlain, 0, lastPlain.Length);
+                          hasLastPlain = true;
+                          pendingCount = 0;
+                        }
+                      }
+                    }
                     if (GUI)
                     {
                       int dlspeed = Utility.DownloadSpeed(bytesTransferred, sw);
@@ -163,6 +200,21 @@ namespace SamFirm
                     CmdLine.SetProgress(Utility.GetProgress(bytesTransferred, total));
                 }
                 while (count > 0);
+                if (decryptInline && completed)
+                {
+                  if (pendingCount != 0 || !hasLastPlain)
+                    throw new IOException("Encrypted firmware stream ended on a partial AES block");
+                  int padding = lastPlain[15];
+                  if (padding < 1 || padding > 16)
+                    throw new IOException("Encrypted firmware has invalid padding");
+                  for (int i = 1; i <= padding; ++i)
+                  {
+                    if (lastPlain[16 - i] != padding)
+                      throw new IOException("Encrypted firmware has invalid padding");
+                  }
+                  output.Write(lastPlain, 0, 16 - padding);
+                  output.Flush();
+                }
               }
             }
             catch (IOException ex)
